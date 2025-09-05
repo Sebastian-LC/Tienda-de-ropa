@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <title>JAANSTYLE - Iniciar sesión</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #8c734a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-card {
+      width: 380px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    .login-card .card-body {
+      padding: 2rem;
+      text-align: center;
+    }
+    .form-control {
+      border-radius: 8px;
+      padding-left: 40px;
+    }
+    .input-group {
+      position: relative;
+    }
+    .input-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+      z-index: 4;
+    }
+    .btn-login {
+      margin-top: 15px;
+      background-color: #8c734a;
+      color: white;
+      font-weight: bold;
+      border-radius: 25px;
+      padding: 10px;
+      border: none;
+    }
+    .btn-login:hover {
+      background-color: #6e5a38;
+    }
+    .logo-img {
+      max-width: 180px;
+      height: auto;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card login-card">
+    <div class="card-body">
+      <img src="logo/logopequeño.png" alt="JAANSTYLE" class="logo-img">
+      
+      <h2>Iniciar sesión</h2>
+
+      <form method="POST" action="/">
+        <div class="mb-3 input-group">
+          <i class="bi bi-person input-icon"></i>
+          <input type="text" class="form-control" name="usuario" placeholder="Colocar Usuario" required>
+        </div>
+        <div class="mb-3 input-group">
+          <i class="bi bi-lock input-icon"></i>
+          <input type="password" class="form-control" name="password" placeholder="Contraseña" required>
+        </div>
+        <a href="#" class="d-block mb-2 small">¿Has olvidado la contraseña?</a>
+        <button type="submit" class="btn btn-login w-100">Ingresar</button>
+      </form>
+
+      <div class="mt-3">
+        <a href="registro.html">CREAR UNA CUENTA NUEVA</a>
+      </div>
+
+      <div class="d-flex flex-column gap-2 mt-3">
+        <a href="#" class="btn btn-danger">
+          <i class="bi bi-google"></i> Iniciar sesión con Google
+        </a>
+        <a href="#" class="btn btn-primary">
+          <i class="bi bi-facebook"></i> Iniciar sesión con Facebook
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
