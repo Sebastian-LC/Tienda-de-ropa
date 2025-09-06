@@ -11,7 +11,7 @@ import os
 # Sessions simple en memoria: session_id -> {user_id, expires_at, last_activity, roles, pending_2fa}
 SESSIONS = {}
 
-def create_user(username, email, password) -> (bool, str):
+def create_user(username, email, password) -> tuple[bool, str]:
     ok, msg = validate_required({"username": username, "email": email, "password": password})
     if not ok:
         return False, msg
