@@ -18,29 +18,67 @@ def verify_password(password, salt_hex, stored_hash):
 def gen_2fa_code():
     return f"{random.randint(0,999999):06d}"
 
+import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import smtplib
+from config import settings
 
-def send_email(to_email, subject, body):
-    msg = MIMEMultipart()
-    msg["From"] = settings.SMTP_USER
-    msg["To"] = to_email
-    msg["Subject"] = subject
-
-    # 🔧 Forzar UTF-8
-    msg.attach(MIMEText(body, "plain", "utf-8"))
-
+def send_email(to_email, subject, message, html=False):
     try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = settings.SMTP_USER
+        msg["To"] = to_email
+        msg["Subject"] = subject
+
+        if html:
+            msg.attach(MIMEText(message, "html", "utf-8"))
+        else:
+            msg.attach(MIMEText(message, "plain", "utf-8"))
+
         with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
             server.starttls()
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
+            server.send_message(msg)
+
+        return True
     except Exception as e:
         print("Failed to send email:", e)
-        raise
+        return False
 
+
+
+def build_2fa_email(username: str, code: str) -> str:
+    return f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+        <table style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 10px; 
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 20px;">
+        <tr>
+            <td style="text-align: center;">
+            <h2 style="color: #8c734a;">JAANSTYLE</h2>
+            <p style="font-size: 16px; color: #333;">Hola <b>{username}</b>,</p>
+            <p style="font-size: 15px; color: #333;">
+                Tu código de verificación en dos pasos es:
+            </p>
+            <div style="font-size: 28px; font-weight: bold; 
+                        background: #8c734a; color: white; 
+                        padding: 12px 20px; border-radius: 8px; 
+                        display: inline-block; letter-spacing: 3px;">
+                {code}
+            </div>
+            <p style="margin-top: 20px; font-size: 13px; color: #666;">
+                Este código expirará en 30 minutos.<br/>
+                Si no solicitaste este inicio de sesión, por favor ignora este mensaje.
+            </p>
+            </td>
+        </tr>
+        </table>
+    </body>
+    </html>
+    """
 
 
 def now():
     return datetime.utcnow().isoformat(timespec='seconds')
+
+

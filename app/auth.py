@@ -151,8 +151,12 @@ def login(email, password, client_ip):
     expires = datetime.utcnow() + timedelta(minutes=5)
     SESSIONS[token] = {"user_id": user_id, "expires_at": expires, "verified": False, "pending_2fa": code, "last_activity": datetime.utcnow()}
     # send email with code
+    # send email with code (HTML bonito)
     try:
-        send_email(email, "Código 2FA", f"Tu código de autenticación es: {code}")
+        from .utils import build_2fa_email
+        html_msg = build_2fa_email(username, code)
+        send_email(email, "Código 2FA - JAANSTYLE", html_msg, html=True)
+
     except Exception as e:
         # fallback: write to logs so dev can see code if SMTP not configured
         with open(settings.ACCESS_LOG, "a", encoding="utf-8") as f:

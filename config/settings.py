@@ -29,8 +29,8 @@ SESSION_TIMEOUT_SECONDS = 1800  # 30 minutos
 # Configuración de correo (para HU-03: 2FA por correo)
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USER = "sebastianlngas2027@gmail.com"
-SMTP_PASSWORD = "sebastian64"
+SMTP_USER = "sebastianlongas2027@gmail.com"
+SMTP_PASSWORD = "bnfo daqj mbau bsem"
 
 # Mensaje de mantenimiento
 MAINTENANCE_MESSAGE = "El sistema está en mantenimiento, por favor intente más tarde."
