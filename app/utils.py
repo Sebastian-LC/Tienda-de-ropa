@@ -67,7 +67,7 @@ def build_2fa_email(username: str, code: str) -> str:
                 {code}
             </div>
             <p style="margin-top: 20px; font-size: 13px; color: #666;">
-                Este código expirará en 30 minutos.<br/>
+                Este código expirará en 5 minutos.<br/>
                 Si no solicitaste este inicio de sesión, por favor ignora este mensaje.
             </p>
             </td>
