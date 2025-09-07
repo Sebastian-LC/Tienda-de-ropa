@@ -71,6 +71,7 @@
     <main class="content container my-4">
       <!-- Intro -->
       <section class="intro p-3 rounded mb-3">
+        <h1 class="text-warning">Bienvenido, {user.username}</h1>
         <p>
           La venta de ropa personalizada ha sido una gran opción al mercado de
           hoy en día, ya que permite a los clientes expresar su estilo y
@@ -181,26 +182,19 @@
             <tr>
               <th>Fecha</th>
               <th>Prenda</th>
-              <th>Color</th>
               <th>Talla</th>
               <th>Estado</th>
             </tr>
           </thead>
           <tbody>
+            <!-- loop orders -->
             <tr>
-              <td>05/09/2025</td>
-              <td>Camiseta</td>
-              <td>Negro</td>
-              <td>M</td>
-              <td>Enviado</td>
+              <td>{item.date}</td>
+              <td>{item.garment}</td>
+              <td>{item.size}</td>
+              <td>{item.status}</td>
             </tr>
-            <tr>
-              <td>30/08/2025</td>
-              <td>Sudadera</td>
-              <td>Rojo</td>
-              <td>L</td>
-              <td>Entregado</td>
-            </tr>
+            <!-- endloop -->
           </tbody>
         </table>
       </section>

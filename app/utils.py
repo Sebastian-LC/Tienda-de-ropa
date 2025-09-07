@@ -18,22 +18,28 @@ def verify_password(password, salt_hex, stored_hash):
 def gen_2fa_code():
     return f"{random.randint(0,999999):06d}"
 
-#def send_email(to_address, subject, body):
-    # Usa SMTP configurado en settings; para pruebas puedes poner SMTP de Gmail (requiere app password)
-    #msg = EmailMessage()
-    #msg["From"] = settings.EMAIL_FROM
-    #msg["To"] = to_address
-    #msg["Subject"] = subject
-    #msg.set_content(body)
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import smtplib
 
-    #with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as s:
-        #s.starttls()
-        #s.login(settings.SMTP_USER, settings.SMTP_PASS)
-        #s.send_message(msg)
+def send_email(to_email, subject, body):
+    msg = MIMEMultipart()
+    msg["From"] = settings.SMTP_USER
+    msg["To"] = to_email
+    msg["Subject"] = subject
 
-def send_email(to_address, subject, body):
-    with open("../logs/access_attempts.log", "a", encoding="utf-8") as f:
-        f.write(f"{now()} | EMAIL_TO:{to_address} | SUBJ:{subject} | BODY:{body}\\n")
+    # 🔧 Forzar UTF-8
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    try:
+        with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
+            server.starttls()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_USER, to_email, msg.as_string())
+    except Exception as e:
+        print("Failed to send email:", e)
+        raise
+
 
 
 def now():

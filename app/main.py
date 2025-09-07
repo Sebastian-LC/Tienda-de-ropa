@@ -9,6 +9,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import parse_qs
 import json
 import sqlite3
+import re
 
 # Ahora ya puede importar config y los módulos locales
 from config import settings
@@ -20,8 +21,46 @@ TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 def render_template(name, **ctx):
     with open(os.path.join(TEMPLATES_DIR, name), "r", encoding="utf-8") as f:
         content = f.read()
-    if ctx:
-        return content.format(**ctx)
+
+    if not ctx:
+        return content
+
+    # Simple template engine:
+    # 1. Handles loops: <!-- loop orders -->...<!-- endloop -->
+    # 2. Handles variables: {user.username}, {item.name}, {message}
+
+    # Handle loops
+    loop_regex = re.compile(r"<!-- loop (\w+) -->(.*?)<!-- endloop -->", re.DOTALL)
+    
+    def handle_loop(match):
+        list_name = match.group(1)
+        loop_template = match.group(2)
+        items = ctx.get(list_name, [])
+        
+        rendered_loop = ""
+        if not items:
+            return "<tr><td colspan='99' class='text-center'>No hay datos.</td></tr>"
+
+        for item in items:
+            item_html = loop_template
+            for key, value in item.items():
+                item_html = item_html.replace(f"{{item.{key}}}", str(value))
+            rendered_loop += item_html
+        return rendered_loop
+
+    content = loop_regex.sub(handle_loop, content)
+
+    # Handle object variables like {user.username}
+    for key, data in ctx.items():
+        if isinstance(data, dict):
+            for sub_key, sub_value in data.items():
+                content = content.replace(f"{{{key}.{sub_key}}}", str(sub_value))
+
+    # Handle simple variables like {message}
+    for key, value in ctx.items():
+        if not isinstance(value, (dict, list)):
+            content = content.replace(f"{{{key}}}", str(value))
+
     return content
 
 
@@ -36,12 +75,23 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/forms":
             self.respond(200, render_template("forms.html"))
         elif self.path == "/dashboard":
-            session = self.get_session()
-            ok, s = auth.require_session(session) if session else (False, None)
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
             if not ok:
                 self.redirect("/")
                 return
-            self.respond(200, render_template("dashboard.html"))
+
+            user_id = session_data["user_id"]
+            user = auth.get_user_by_id(user_id)
+            orders = auth.get_user_orders(user_id)
+            
+            # Render a different dashboard based on role
+            if "admin" in session_data.get("roles", []):
+                template_name = "dashboard_admin.html"
+            else:
+                template_name = "dashboard_user.html"
+            
+            self.respond(200, render_template(template_name, user=user, orders=orders))
         elif self.path == "/logout":
             session = self.get_session()
             auth.logout(session)
@@ -55,15 +105,23 @@ class Handler(BaseHTTPRequestHandler):
         params = parse_qs(body)
         client_ip = self.client_address[0]
 
+        # 🔎 DEBUG: imprimir lo que llega en POST
+        print("\n==== DEBUG POST ====")
+        print("Path:", self.path)
+        print("Body:", body)
+        print("Params:", params)
+        print("====================\n")
+
         if self.path == "/forms":
-            nombre = params.get("nombre", [""])[0]
+            username = params.get("username", [""])[0]   # ✅ usar 'username'
             email = params.get("email", [""])[0]
             password = params.get("password", [""])[0]
-            ok, msg = auth.create_user(nombre, email, password)
+            ok, msg = auth.create_user(username, email, password)
             if ok:
                 self.redirect("/dashboard")
             else:
                 self.respond(400, render_template("error.html", message=msg))
+
 
 
         # 🔹 Login de usuario
@@ -128,16 +186,19 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def run():
-    os.chdir(os.path.dirname(__file__))  # ensure relative paths ok
-    server_address = ("", settings.PORT)
+    os.chdir(os.path.dirname(__file__))
+
+    use_tls = security.ensure_certs_exist()
+    port = settings.HTTPS_PORT if use_tls else settings.PORT
+    server_address = (settings.HOST, port)
+    
     httpd = HTTPServer(server_address, Handler)
 
-    if security.ensure_certs_exist():
+    if use_tls:
         security.wrap_socket(httpd)
-        print(f"Server running with TLS on port {settings.HTTPS_PORT}")
+        print(f"✅ Server running with TLS on https://{settings.HOST}:{port}")
     else:
-        print("CERTS not found; running without TLS on port 8080")
-        httpd.server_address = ("", 8080)
+        print(f"⚠️ CERTS not found; running without TLS on http://{settings.HOST}:{port}")
 
     try:
         httpd.serve_forever()

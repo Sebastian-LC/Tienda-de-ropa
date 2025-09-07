@@ -1,0 +1,18 @@
+2025-09-07T13:08:45.634357 | ip:127.0.0.1 | user:None | success:0
+2025-09-07T13:09:15.783476 | ip:127.0.0.1 | user:None | success:0
+2025-09-07T13:09:46.925965 | ip:127.0.0.1 | user:None | success:0
+2025-09-07T13:12:11.801334 | ip:127.0.0.1 | user:None | success:0
+2025-09-07T13:12:26.520511 | ip:127.0.0.1 | user:None | success:0
+2025-09-07T15:38:51.245923 | ip:127.0.0.1 | user:None | success:0
+2025-09-07T15:40:22 | 2FA for user:1 code:548184 (SMTP_ERROR: 'ascii' codec can't encode character '\xf1' in position 32: ordinal not in range(128))
+2025-09-07T15:40:22.793403 | ip:127.0.0.1 | user:1 | success:1
+2025-09-07T15:46:09 | 2FA for user:1 code:480461 (SMTP_ERROR: 'ascii' codec can't encode character '\xf1' in position 32: ordinal not in range(128))
+2025-09-07T15:46:10.191774 | ip:127.0.0.1 | user:1 | success:1
+2025-09-07T15:53:50 | 2FA for user:2 code:831809 (SMTP_ERROR: 'ascii' codec can't encode character '\xf1' in position 32: ordinal not in range(128))
+2025-09-07T15:53:51.356773 | ip:127.0.0.1 | user:2 | success:1
+2025-09-07T15:57:14 | 2FA for user:2 code:638423 (SMTP_ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 00721157ae682-723a82db3f0sm44524027b3.14 - gsmtp'))
+2025-09-07T15:57:15.049401 | ip:127.0.0.1 | user:2 | success:1
+2025-09-07T15:58:37 | 2FA for user:2 code:269927 (SMTP_ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 3f1490d57ef6-e9bbe05debbsm4802203276.21 - gsmtp'))
+2025-09-07T15:58:38.146576 | ip:127.0.0.1 | user:2 | success:1
+2025-09-07T16:00:47 | 2FA for user:2 code:200298 (SMTP_ERROR: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 3f1490d57ef6-e9bbdf57cc0sm4777848276.13 - gsmtp'))
+2025-09-07T16:00:48.185569 | ip:127.0.0.1 | user:2 | success:1

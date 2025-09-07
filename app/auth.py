@@ -12,14 +12,22 @@ import os
 SESSIONS = {}
 
 def create_user(username, email, password) -> tuple[bool, str]:
+    print("==== DEBUG CREATE_USER ====")
+    print("Username:", username)
+    print("Email:", email)
+    print("Password:", password)
     ok, msg = validate_required({"username": username, "email": email, "password": password})
     if not ok:
+        print("Fallo en required:", msg)
         return False, msg
     if not validate_email(email):
+        print("Fallo en email")
         return False, "Correo inválido."
     okp, pmsg = validate_password(password)
     if not okp:
+        print("Fallo en password:", pmsg)
         return False, pmsg
+
     salt = gen_salt()
     phash = hash_password(password, salt)
     db = sqlite3.connect(settings.DB_PATH)
@@ -28,9 +36,11 @@ def create_user(username, email, password) -> tuple[bool, str]:
         cur.execute("INSERT INTO users (username, email, password_hash, salt) VALUES (?, ?, ?, ?)", (username, email, phash, salt))
         db.commit()
         user_id = cur.lastrowid
+        print("Usuario creado con id:", user_id)
         log_db_action(user_id, "CREATED USER")
         return True, "Usuario creado."
     except sqlite3.IntegrityError as e:
+        print("IntegrityError:", e)
         if "email" in str(e).lower():
             return False, "El correo ya está registrado."
         if "username" in str(e).lower():
@@ -39,6 +49,7 @@ def create_user(username, email, password) -> tuple[bool, str]:
     finally:
         db.close()
 
+
 def find_user_by_email(email):
     db = sqlite3.connect(settings.DB_PATH)
     try:
@@ -46,6 +57,43 @@ def find_user_by_email(email):
         cur.execute("SELECT id, username, email, password_hash, salt, failed_attempts, blocked FROM users WHERE email = ?", (email,))
         row = cur.fetchone()
         return row
+    finally:
+        db.close()
+
+def get_user_orders(user_id):
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        # Nota: esta consulta es un ejemplo, puede que necesites unir más tablas
+        # para obtener nombres de prendas, colores, etc.
+        cur.execute("""
+            SELECT o.created_at, g.name, o.size, o.status
+            FROM orders o
+            JOIN garments g ON o.garment_id = g.id
+            WHERE o.user_id = ?
+            ORDER BY o.created_at DESC
+        """, (user_id,))
+        orders = []
+        for row in cur.fetchall():
+            orders.append({
+                "date": row[0],
+                "garment": row[1],
+                "size": row[2],
+                "status": row[3]
+            })
+        return orders
+    finally:
+        db.close()
+
+def get_user_by_id(user_id):
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT id, username, email FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {"id": row[0], "username": row[1], "email": row[2]}
     finally:
         db.close()
 
@@ -115,21 +163,28 @@ def login(email, password, client_ip):
 def verify_2fa(token, code, client_ip):
     ses = SESSIONS.get(token)
     if not ses:
-        return False, "Token inválido o expirado."
+        return False, "Token inválido o expirado.", None
     if datetime.utcnow() > ses["expires_at"]:
         del SESSIONS[token]
-        return False, "Token expirado."
+        return False, "Token expirado.", None
     if ses.get("pending_2fa") != code:
         log_access_attempt(ses["user_id"], client_ip, False)
-        return False, "Código incorrecto."
+        return False, "Código incorrecto.", None
+
     # 2FA OK -> crear sesión persistente
     session_id = os.urandom(16).hex()
     expires_at = datetime.utcnow() + timedelta(seconds=settings.SESSION_TIMEOUT_SECONDS)
-    SESSIONS[session_id] = {"user_id": ses["user_id"], "expires_at": expires_at, "last_activity": datetime.utcnow(), "roles": get_roles_for_user(ses["user_id"])}
+    SESSIONS[session_id] = {
+        "user_id": ses["user_id"],
+        "expires_at": expires_at,
+        "last_activity": datetime.utcnow(),
+        "roles": get_roles_for_user(ses["user_id"])
+    }
     # cleanup
     del SESSIONS[token]
     log_db_action(ses["user_id"], "LOGIN_SUCCESS_2FA")
     return True, "Autenticado.", session_id
+
 
 def require_session(session_id):
     s = SESSIONS.get(session_id)
