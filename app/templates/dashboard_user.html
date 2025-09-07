@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard - JAANSTYLE</title>
+
+    <!-- Conexión al CSS -->
+    <link rel="stylesheet" href="../../static/styles.css" />
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Librería de iconos -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- Bootstrap JS (para el menú colapsable) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+        <nav class="navbar navbar-expand-lg">
+  <div class="container-fluid">
+    <!-- Logo a la izquierda -->
+    <a class="navbar-brand d-flex align-items-center" href="#">
+      <img src="../../static/logo/logopequeño.png" alt="JAANSTYLE">
+      <span class="fw-bold">JAANSTYLE</span>
+    </a>
+
+    <!-- Botón menú móvil -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+            data-bs-target="#navbarNav" aria-controls="navbarNav" 
+            aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Links -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="#creacion-prenda">Creación de prendas <i class="fa fa-tshirt"></i></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#informes">Informes <i class="fa fa-file-alt"></i></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#consultas"> Consultas<i class="fa fa-question-circle"></i></a>
+        </li>
+      </ul>
+      <!-- Iconos -->
+      <div class="d-flex ms-3">
+        <a href="#" class="nav-link"><i class="fa fa-user"></i></a>
+        <a href="#" class="nav-link"><i class="fa fa-shopping-cart"></i></a>
+      </div>
+    </div>
+  </div>
+</nav>
+    
+
+
+   <!-- Contenido -->
+    <main class="content container my-4">
+      <!-- Intro -->
+      <section class="intro p-3 rounded mb-3">
+        <p>
+          La venta de ropa personalizada ha sido una gran opción al mercado de
+          hoy en día, ya que permite a los clientes expresar su estilo y
+          personalidad de manera única. Por lo que la creación de una página web
+          de venta de ropa personalizada es una gran idea para satisfacer las
+          necesidades de las personas de hoy en día.
+        </p>
+      </section>
+
+      <!-- Misión -->
+      <section class="mision p-3 rounded  mb-3">
+        <h2 class="text-warning">Misión</h2>
+        <p>
+          Nuestra misión es ofrecer una experiencia única a nuestros clientes al
+          comprar ropa en nuestra página, donde puedes expresar toda tu
+          personalidad y estilo a través de nuestra selección de prendas y
+          accesorios exclusivos. Nos esforzamos en brindarte la mejor calidad al
+          mejor precio, para que se sientan cómodos al vestir nuestros diseños
+          como su página de ropa personalizada favorita.
+        </p>
+      </section>
+
+      <!-- Visión -->
+      <section class="vision p-3 rounded mb-3">
+        <h2 class="text-warning">Visión</h2>
+        <p>
+          Que nuestra página web sea reconocida como la tienda de ropa líder en
+          ofrecer una experiencia de compra personalizada, que refleje la
+          diversidad y originalidad de nuestros clientes. Queremos ser una marca
+          que inspire a las personas a hacer lo más original posible, a través
+          de la moda y el estilo.
+        </p>
+      </section>
+
+      <!-- Creación de Prenda -->
+      <section id="creacion-prenda" class="p-3 rounded mb-3">
+        <h2 class="text-warning">Creación de Prenda</h2>
+        <form>
+          <!-- Tipo de prenda -->
+          <div class="mb-3">
+            <label for="tipo-prenda" class="form-label">Tipo de prenda</label>
+            <select id="tipo-prenda" class="form-select">
+              <option>Camiseta</option>
+              <option>Pantalón</option>
+              <option>Chaqueta</option>
+              <option>Sudadera</option>
+            </select>
+          </div>
+
+          <!-- Tela -->
+          <div class="mb-3">
+            <label for="tela" class="form-label">Tela</label>
+            <select id="tela" class="form-select">
+              <option>Algodón</option>
+              <option>Poliéster</option>
+              <option>Mezclilla</option>
+              <option>Lino</option>
+            </select>
+          </div>
+
+          <!-- Color -->
+          <div class="mb-3">
+            <label for="color" class="form-label">Color</label>
+            <input
+              type="color"
+              id="color"
+              class="form-control form-control-color"
+              value="#000000"
+            />
+          </div>
+
+          <!-- Estampado -->
+          <div class="mb-3">
+            <label for="estampado" class="form-label">Estampado</label>
+            <select id="estampado" class="form-select">
+              <option>Sin estampado</option>
+              <option>Logo</option>
+              <option>Texto personalizado</option>
+              <option>Imagen</option>
+            </select>
+          </div>
+
+          <!-- Talla -->
+          <div class="mb-3">
+            <label for="talla" class="form-label">Talla</label>
+            <select id="talla" class="form-select">
+              <option>S</option>
+              <option>M</option>
+              <option>L</option>
+              <option>XL</option>
+            </select>
+          </div>
+
+          <!-- Botón -->
+          <button type="submit" class="btn btn-warning fw-bold">
+            Crear Prenda
+          </button>
+        </form>
+      </section>
+
+      <!-- Informes -->
+      <section id="informes" class="p-3 rounded mb-3">
+        <h2 class="text-warning">Informes</h2>
+        <p>Aquí podrás visualizar el historial de tus compras y prendas creadas.</p>
+
+        <table class="table  table-hover text-center align-middle">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Prenda</th>
+              <th>Color</th>
+              <th>Talla</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>05/09/2025</td>
+              <td>Camiseta</td>
+              <td>Negro</td>
+              <td>M</td>
+              <td>Enviado</td>
+            </tr>
+            <tr>
+              <td>30/08/2025</td>
+              <td>Sudadera</td>
+              <td>Rojo</td>
+              <td>L</td>
+              <td>Entregado</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Consultas -->
+      <section id="consultas" class="p-3 rounded mb-3">
+        <h2 class="text-warning">Consultas</h2>
+        <p>Si tienes alguna duda o necesitas ayuda, escríbenos aquí:</p>
+        <form>
+          <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input
+              type="text"
+              id="nombre"
+              class="form-control"
+              placeholder="Escribe tu nombre"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label">Correo</label>
+            <input
+              type="email"
+              id="email"
+              class="form-control"
+              placeholder="ejemplo@correo.com"
+            />
+          </div>
+
+          <div class="mb-3">
+            <label for="mensaje" class="form-label">Mensaje</label>
+            <textarea
+              id="mensaje"
+              rows="4"
+              class="form-control"
+              placeholder="Escribe tu consulta"
+            ></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-warning fw-bold">Enviar</button>
+        </form>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-center py-3">
+      <div class="social">
+        <a href="#" class="text-light me-3">
+          <i class="fa-brands fa-instagram"></i>
+        </a>
+        <a href="#" class="text-light">
+          <i class="fa-brands fa-facebook"></i>
+        </a>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,63 @@
+   /* Ajuste del logo */
+   .navbar-brand img {
+     height: 40px; /* tamaño pequeño y proporcionado */
+     width: auto; /* mantiene proporción */
+   }
+
+   /* Estilos de la barra de navegación */
+.navbar {
+  background-color: #bfa046 !important; /* dorado */
+  padding: 10px 20px;
+}
+
+/* Logo pequeño en la izquierda */
+.navbar-brand img {
+  height: 40px; /* tamaño del logo */
+  width: auto;
+  margin-right: 10px;
+}
+/*cambia color del texto de los enlaces en la barra de navegación*/
+
+body {
+  background-color: #f5f5dc; /* Beige de fondo general */
+  color: #3e2723; /* Café oscuro para el texto */
+  font-family: "Poppins", sans-serif; /* Fuente moderna */
+}
+body {
+  background-image: url("logo/Fondodelapagina.jpg");
+  background-size: cover;      /* hace que cubra toda la pantalla */
+  background-repeat: no-repeat; /* evita que se repita */
+  background-attachment: fixed; /* efecto parallax (se queda fijo) */
+  background-position: center;  /* centra la imagen */
+}
+
+/* Títulos */
+h2 {
+  color: #d4a373; /* Dorado/Mostaza elegante */
+  font-weight: bold;
+}
+
+/* Footer */
+footer {
+  background-color: #6f4e37; /* Igual al menú */
+  color: #fff8f0;
+}
+
+/* Estilo de las secciones */
+section {
+  background-color: #bfa046; /* crema suave */
+  color: #3e2723; /* café oscuro para el texto */
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* sombra suave */
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Títulos */
+section h2 {
+  color: #000000; /* dorado igual al menú */
+  font-weight: bold;
+}
+html {
+  scroll-behavior: smooth;
+}
