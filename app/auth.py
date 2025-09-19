@@ -115,13 +115,15 @@ def increment_failed_attempts(user_id):
         cur.execute("SELECT failed_attempts FROM users WHERE id = ?", (user_id,))
         fa = cur.fetchone()[0]
         if fa >= settings.MAX_FAILED_ATTEMPTS:
-            cur.execute("UPDATE users SET blocked = 1 WHERE id = ?", (user_id,))
+            # Bloqueo temporal: 10 minutos
+            blocked_until = int(time.time()) + 600
+            cur.execute("UPDATE users SET blocked = 1, blocked_until = ? WHERE id = ?", (blocked_until, user_id))
             db.commit()
             # alert email (look up user email)
             cur.execute("SELECT email FROM users WHERE id = ?", (user_id,))
             email = cur.fetchone()[0]
             try:
-                send_email(email, "Cuenta bloqueada", "Su cuenta ha sido bloqueada después de varios intentos fallidos.")
+                send_email(email, "Cuenta bloqueada", "Su cuenta ha sido bloqueada temporalmente después de varios intentos fallidos. Podrá intentar de nuevo en 10 minutos.")
             except Exception:
                 # fallback: write to access log
                 with open(settings.ACCESS_LOG, "a", encoding="utf-8") as f:
@@ -140,41 +142,50 @@ def reset_failed_attempts(user_id):
 def login(email, password, client_ip):
     user = find_user_by_email(email)
     if not user:
-        # log attempt with user_id = None
         log_access_attempt(None, client_ip, False)
-        return False, "Credenciales inválidas.", None
+        return False, "Credenciales inválidas.", None, None
     user_id, username, email, phash, salt, failed_attempts, blocked, enabled = user
+    # Verificar bloqueo temporal
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT blocked, blocked_until FROM users WHERE id = ?", (user_id,))
+        blocked_val, blocked_until = cur.fetchone()
+        if blocked_val:
+            now_ts = int(time.time())
+            if blocked_until and now_ts >= blocked_until:
+                # Desbloquear automáticamente
+                cur.execute("UPDATE users SET blocked = 0, blocked_until = NULL, failed_attempts = 0 WHERE id = ?", (user_id,))
+                db.commit()
+            else:
+                log_access_attempt(user_id, client_ip, False)
+                mins = int((blocked_until - now_ts) / 60) + 1 if blocked_until else 10
+                return False, f"Cuenta bloqueada temporalmente. Intente de nuevo en {mins} minutos.", None, None
+    finally:
+        db.close()
     if not enabled:
         log_access_attempt(user_id, client_ip, False)
-        return False, "Usuario deshabilitado. Contacte a un administrador.", None
-    if blocked:
-        log_access_attempt(user_id, client_ip, False)
-        return False, "Cuenta bloqueada. Contacte a un administrador.", None
+        return False, "Usuario deshabilitado. Contacte a un administrador.", None, None
     if not verify_password(password, salt, phash):
         increment_failed_attempts(user_id)
         log_access_attempt(user_id, client_ip, False)
-        return False, "Credenciales inválidas.", None
-    # password OK -> reset attempts
+        # Calcular intentos restantes
+        remaining = max(0, settings.MAX_FAILED_ATTEMPTS - (failed_attempts + 1))
+        return False, f"Credenciales inválidas. Te quedan {remaining} intento(s) antes del bloqueo temporal.", None, remaining
     reset_failed_attempts(user_id)
-    # generate 2FA
     code = gen_2fa_code()
-    # save pending 2fa in SESSIONS temporary token
     token = os.urandom(16).hex()
     expires = datetime.utcnow() + timedelta(minutes=5)
     SESSIONS[token] = {"user_id": user_id, "expires_at": expires, "verified": False, "pending_2fa": code, "last_activity": datetime.utcnow()}
-    # send email with code
-    # send email with code (HTML bonito)
     try:
         from .utils import build_2fa_email
         html_msg = build_2fa_email(username, code)
         send_email(email, "Código 2FA - JAANSTYLE", html_msg, html=True)
-
     except Exception as e:
-        # fallback: write to logs so dev can see code if SMTP not configured
         with open(settings.ACCESS_LOG, "a", encoding="utf-8") as f:
             f.write(f"{now()} | 2FA for user:{user_id} code:{code} (SMTP_ERROR: {e})\n")
     log_access_attempt(user_id, client_ip, True)
-    return True, "Se ha enviado un código 2FA al correo.", token
+    return True, "Se ha enviado un código 2FA al correo.", token, None
 
 def verify_2fa(token, code, client_ip):
     ses = SESSIONS.get(token)
@@ -187,6 +198,18 @@ def verify_2fa(token, code, client_ip):
         log_access_attempt(ses["user_id"], client_ip, False)
         return False, "Código incorrecto.", None
 
+    # Validar que el usuario esté habilitado antes de crear la sesión
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT enabled FROM users WHERE id = ?", (ses["user_id"],))
+        row = cur.fetchone()
+        if not row or row[0] != 1:
+            del SESSIONS[token]
+            log_access_attempt(ses["user_id"], client_ip, False)
+            return False, "Usuario deshabilitado. Contacte a un administrador.", None
+    finally:
+        db.close()
     # 2FA OK -> crear sesión persistente
     session_id = os.urandom(16).hex()
     expires_at = datetime.utcnow() + timedelta(seconds=settings.SESSION_TIMEOUT_SECONDS)
@@ -232,6 +255,16 @@ def get_roles_for_user(user_id):
         cur = db.cursor()
         cur.execute("SELECT r.role_name FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = ?", (user_id,))
         return [row[0] for row in cur.fetchall()]
+    finally:
+        db.close()
+
+def get_user_role_id(user_id):
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT role_id FROM user_roles WHERE user_id = ? LIMIT 1", (user_id,))
+        row = cur.fetchone()
+        return row[0] if row else None
     finally:
         db.close()
 

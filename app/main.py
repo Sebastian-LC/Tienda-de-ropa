@@ -66,14 +66,39 @@ def render_template(name, **ctx):
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # Servir archivos estáticos
+        if self.path.startswith("/static/"):
+            static_path = self.path.lstrip("/")
+            static_file = os.path.join(os.path.dirname(__file__), static_path)
+            if os.path.isfile(static_file):
+                # Determinar el tipo de contenido
+                if static_file.endswith('.css'):
+                    content_type = 'text/css'
+                elif static_file.endswith('.js'):
+                    content_type = 'application/javascript'
+                elif static_file.endswith('.png'):
+                    content_type = 'image/png'
+                elif static_file.endswith('.jpg') or static_file.endswith('.jpeg'):
+                    content_type = 'image/jpeg'
+                elif static_file.endswith('.gif'):
+                    content_type = 'image/gif'
+                else:
+                    content_type = 'application/octet-stream'
+                with open(static_file, 'rb') as f:
+                    self.respond(200, f.read(), content_type=content_type)
+                return
+            else:
+                self.respond(404, "Archivo estático no encontrado")
+                return
+
         if maintenance.is_maintenance():
             self.respond(200, render_template("maintenance.html"))
             return
 
         if self.path == "/":
-            self.respond(200, render_template("login.html"))
+            self.respond(200, render_template("login.html", error_message_div="", email=""))
         elif self.path == "/forms":
-            self.respond(200, render_template("forms.html"))
+            self.respond(200, render_template("forms.html", error_message_div="", username="", email=""))
         elif self.path == "/dashboard":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
@@ -92,6 +117,77 @@ class Handler(BaseHTTPRequestHandler):
                 template_name = "dashboard_user.html"
             
             self.respond(200, render_template(template_name, user=user, orders=orders))
+        elif self.path == "/admin/users":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.redirect("/")
+                return
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                cur.execute("SELECT id, username, email, enabled FROM users")
+                users = []
+                for row in cur.fetchall():
+                    enabled = row[3]
+                    enabled_str = "success" if enabled else "secondary"
+                    enabled_label = "Habilitado" if enabled else "Deshabilitado"
+                    btn_text = "Deshabilitar" if enabled == 1 else "Habilitar"
+                    btn_class = "btn-danger" if enabled == 1 else "btn-success"
+                    # Obtener el rol actual
+                    from . import auth as authmod
+                    role_id = authmod.get_user_role_id(row[0])
+                    users.append({
+                        "id": row[0],
+                        "username": row[1],
+                        "email": row[2],
+                        "enabled": enabled_label,
+                        "enabled_class": enabled_str,
+                        "enabled_btn_text": btn_text,
+                        "enabled_btn_class": btn_class,
+                        "role_id": role_id
+                    })
+            finally:
+                db.close()
+            # Si es AJAX, solo devolver el <tbody> de la tabla de usuarios
+            if self.headers.get("X-Requested-With") == "XMLHttpRequest":
+                # Renderizar solo el loop users
+                with open(os.path.join(TEMPLATES_DIR, "dashboard_admin.html"), "r", encoding="utf-8") as f:
+                    content = f.read()
+                import re
+                m = re.search(r"<!-- loop users -->(.*?)<!-- endloop -->", content, re.DOTALL)
+                if m:
+                    loop_template = m.group(1)
+                    rendered = ""
+                    if not users:
+                        rendered = "<tr><td colspan='99' class='text-center'>No hay datos.</td></tr>"
+                    else:
+                        for item in users:
+                            item_html = loop_template
+                            for key, value in item.items():
+                                item_html = item_html.replace(f"{{item.{key}}}", str(value))
+                            rendered += item_html
+                    self.respond(200, rendered)
+                    return
+            # Si no es AJAX, renderizar la página completa
+            html = render_template("dashboard_admin.html", user=session_data, users=users)
+            self.respond(200, html)
+        elif self.path == "/admin/roles":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.respond(403, "No autorizado")
+                return
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                cur.execute("SELECT id, role_name FROM roles")
+                roles = cur.fetchall()
+                roles_list = [{"id": r[0], "name": r[1]} for r in roles]
+            finally:
+                db.close()
+            self.respond(200, json.dumps(roles_list), content_type="application/json")
+            return
         elif self.path == "/logout":
             session = self.get_session()
             auth.logout(session)
@@ -112,6 +208,20 @@ class Handler(BaseHTTPRequestHandler):
         print("Params:", params)
         print("====================\n")
 
+        if self.path == "/reauthenticate":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                return
+            password = params.get("password", [""])[0]
+            user_id = session_data["user_id"]
+            if auth.reauthenticate(user_id, password):
+                self.respond(200, json.dumps({"ok": True}), content_type="application/json")
+            else:
+                self.respond(200, json.dumps({"ok": False, "msg": "Contraseña incorrecta"}), content_type="application/json")
+            return
+
         if self.path == "/forms":
             username = params.get("username", [""])[0]   # ✅ usar 'username'
             email = params.get("email", [""])[0]
@@ -120,17 +230,18 @@ class Handler(BaseHTTPRequestHandler):
             if ok:
                 self.redirect("/dashboard")
             else:
-                self.respond(400, render_template("error.html", message=msg))
-
-
+                error_message_div = f'<div id="error-message" class="alert alert-danger" role="alert">{msg}</div>' if msg else ''
+                self.respond(400, render_template("forms.html", error_message=msg, error_message_div=error_message_div, username=username, email=email))
 
         # 🔹 Login de usuario
         elif self.path == "/login":
             email = params.get("email", [""])[0]
             password = params.get("password", [""])[0]
-            ok, msg, token = auth.login(email, password, client_ip)
+            ok, msg, token, remaining = auth.login(email, password, client_ip)
             if not ok:
-                self.respond(403, render_template("error.html", message=msg))
+                # Mostrar mensaje de error e intentos restantes en la misma página de login
+                error_message_div = f'<div id="error-message" class="alert alert-danger" role="alert">{msg}</div>' if msg else ''
+                self.respond(403, render_template("login.html", error_message_div=error_message_div, email=email))
                 return
             html = f"""
                 <html><body>
@@ -156,7 +267,56 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Set-Cookie", f"session_id={session_id}; HttpOnly")
             self.send_header("Location", "/dashboard")
             self.end_headers()
-
+        elif self.path == "/admin/disable_user":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.redirect("/")
+                return
+            user_id = int(params.get("user_id", [0])[0])
+            # No permitir que el admin se deshabilite a sí mismo
+            if user_id == session_data["user_id"]:
+                self.respond(400, b"No puedes deshabilitar tu propio usuario.")
+                return
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                # Leer el estado actual
+                cur.execute("SELECT enabled FROM users WHERE id = ?", (user_id,))
+                row = cur.fetchone()
+                if row is not None:
+                    current_enabled = row[0]
+                    new_enabled = 0 if current_enabled else 1
+                    cur.execute("UPDATE users SET enabled = ? WHERE id = ?", (new_enabled, user_id))
+                    db.commit()
+            finally:
+                db.close()
+            # Si es AJAX, responder con texto plano
+            if self.headers.get("X-Requested-With") == "XMLHttpRequest":
+                self.respond(200, b"ok", content_type="text/plain")
+            else:
+                self.redirect("/admin/users")
+            return
+        elif self.path == "/admin/set_role":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.respond(403, "No autorizado")
+                return
+            user_id = int(params.get("user_id", [0])[0])
+            role_id = int(params.get("role_id", [0])[0])
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                # Eliminar roles actuales
+                cur.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
+                # Asignar nuevo rol
+                cur.execute("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?) ", (user_id, role_id))
+                db.commit()
+            finally:
+                db.close()
+            self.respond(200, b"ok", content_type="text/plain")
+            return
         else:
             self.respond(404, "Not Found")
 

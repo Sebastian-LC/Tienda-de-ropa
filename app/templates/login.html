@@ -69,13 +69,22 @@
       <h2>Iniciar sesión</h2>
 
       <form action="/login" method="POST">
-        <div class="mb-3 input-group">
-          <i class="bi bi-person input-icon"></i>
-          <input type="text" class="form-control" name="email" placeholder="Email" required value="{email}">
+        <div class="mb-3">
+          <label for="email" class="form-label w-100 text-start">Correo electrónico</label>
+          <div class="input-group">
+            <i class="bi bi-envelope input-icon"></i>
+            <input type="text" class="form-control" id="email" name="email" placeholder="Email" required value="{email}">
+          </div>
         </div>
-        <div class="mb-3 input-group">
-          <i class="bi bi-lock input-icon"></i>
-          <input type="password" class="form-control" name="password" placeholder="Contraseña" required>
+        <div class="mb-3">
+          <label for="password" class="form-label w-100 text-start">Contraseña</label>
+          <div class="input-group">
+            <i class="bi bi-lock input-icon"></i>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Contraseña" required>
+            <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: #f8f9fa; border: 1px solid #ced4da; margin-left: 5px;" type="button" id="togglePassword" tabindex="-1" title="Mostrar/Ocultar contraseña">
+              <i id="eyeIcon" class="bi bi-eye"></i>
+            </button>
+          </div>
         </div>
         <a href="/forgot-password" class="d-block mb-2 small">¿Has olvidado la contraseña?</a>
         <button type="submit" class="btn btn-login w-100">Ingresar</button>
@@ -87,5 +96,20 @@
 
     </div>
   </div>
+
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const togglePassword = document.getElementById('togglePassword');
+  const passwordInput = document.getElementById('password');
+  const eyeIcon = document.getElementById('eyeIcon');
+  if (togglePassword && passwordInput && eyeIcon) {
+    togglePassword.addEventListener('click', function() {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      eyeIcon.className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    });
+  }
+});
+</script>
 </body>
 </html>

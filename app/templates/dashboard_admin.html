@@ -41,8 +41,8 @@
             <th>ID</th>
             <th>Usuario</th>
             <th>Email</th>
-            <th>Estado</th>
-            <th>Acción</th>
+            <th>Estado/Acción</th>
+            <th>Rol</th>
           </tr>
         </thead>
         <tbody>
@@ -52,14 +52,15 @@
             <td>{item.username}</td>
             <td>{item.email}</td>
             <td>
-              <span class="badge bg-{item.enabled_class} text-dark">{item.enabled}</span>
-            </td>
-            <td>
-              <!-- Botón dinámico según estado -->
               <form method="POST" action="/admin/disable_user" style="display:inline;">
                 <input type="hidden" name="user_id" value="{item.id}">
-                <button type="submit" class="btn btn-sm {item.enabled_btn_class}">{item.enabled_btn_text}</button>
+                <button type="submit" class="btn btn-sm {item.enabled_btn_class}">
+                  {item.enabled_btn_text} ({item.enabled})
+                </button>
               </form>
+            </td>
+            <td>
+              <select class="form-select form-select-sm role-select" data-user-id="{item.id}" data-current-role="{item.role_id}"></select>
             </td>
           </tr>
           <!-- endloop -->
@@ -121,34 +122,184 @@
           </tr>
         </tbody>
       </table>
+      <div id="roles-error" class="alert alert-danger d-none" role="alert">
+  No se pudieron cargar los roles. Por favor, recarga la página o inicia sesión nuevamente como administrador.
+</div>
       <script>
       document.addEventListener('DOMContentLoaded', function() {
         const refreshBtn = document.getElementById('refresh-users');
+        function loadRolesAndPopulate() {
+          fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(r => r.json())
+            .then(roles => {
+              document.querySelectorAll('.role-select').forEach(function(select) {
+                const currentRole = select.getAttribute('data-current-role');
+                select.innerHTML = '';
+                roles.forEach(function(role) {
+                  const option = document.createElement('option');
+                  option.value = role.id;
+                  option.textContent = role.name;
+                  if (String(role.id) === String(currentRole)) option.selected = true;
+                  select.appendChild(option);
+                });
+              });
+            });
+        }
         if (refreshBtn) {
           refreshBtn.addEventListener('click', function() {
             fetch('/admin/users', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
               .then(r => r.text())
               .then(html => {
-                // Extraer solo el tbody de la tabla de usuarios
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const newTbody = doc.querySelector('#usuarios tbody');
                 const oldTbody = document.querySelector('#usuarios tbody');
                 if (newTbody && oldTbody) {
                   oldTbody.innerHTML = newTbody.innerHTML;
+                } else {
+                  oldTbody.innerHTML = html;
                 }
+                loadRolesAndPopulate();
               });
           });
         }
+        // Cargar roles al inicio
+        loadRolesAndPopulate();
+        // ...eliminar listener directo de cambio de rol, solo usar la lógica del modal...
+        // Alerta de expiración de sesión
+        let sessionTimeout = 10 * 60; // 10 minutos en segundos
+        let warningShown = false;
+        function showSessionWarning() {
+          if (!document.getElementById('session-warning')) {
+            const div = document.createElement('div');
+            div.id = 'session-warning';
+            div.className = 'alert alert-warning position-fixed top-0 start-50 translate-middle-x mt-3';
+            div.style.zIndex = 2000;
+            div.innerHTML = '<b>¡Atención!</b> Tu sesión se cerrará automáticamente en 2 minutos por inactividad.';
+            document.body.appendChild(div);
+            setTimeout(() => div.remove(), 120000); // Quitar mensaje tras 2 minutos
+          }
+        }
+        setInterval(function() {
+          sessionTimeout -= 1;
+          if (sessionTimeout === 120 && !warningShown) {
+            showSessionWarning();
+            warningShown = true;
+          }
+        }, 1000);
       });
       </script>
-      </table>
     </section>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-dark text-center py-3">
-    <p class="text-light mb-0">&copy; 2025 JAANSTYLE - Panel Administrador</p>
-  </footer>
+  <!-- Modal de reautenticación -->
+<div class="modal fade" id="reauthModal" tabindex="-1" aria-labelledby="reauthModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reauthModalLabel">Confirmar acción sensible</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p>Por seguridad, ingresa tu contraseña para continuar.</p>
+        <input type="password" class="form-control" id="reauthPassword" placeholder="Contraseña" autocomplete="current-password">
+        <div id="reauthError" class="text-danger mt-2" style="display:none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="reauthConfirmBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script>
+// Reautenticación para acciones sensibles
+let reauthAction = null;
+let reauthUserId = null;
+let reauthRoleId = null;
+let reauthTarget = null;
+function showReauthModal(action, userId, roleId, target) {
+  reauthAction = action;
+  reauthUserId = userId;
+  reauthRoleId = roleId || null;
+  reauthTarget = target || null;
+  document.getElementById('reauthPassword').value = '';
+  document.getElementById('reauthError').style.display = 'none';
+  const modal = new bootstrap.Modal(document.getElementById('reauthModal'));
+  modal.show();
+}
+document.addEventListener('DOMContentLoaded', function() {
+  // Interceptar deshabilitar usuario
+  document.querySelector('#usuarios').addEventListener('submit', function(e) {
+    if (e.target.matches('form[action="/admin/disable_user"]')) {
+      e.preventDefault();
+      const userId = e.target.querySelector('input[name="user_id"]').value;
+      showReauthModal('disable', userId, null, e.target);
+    }
+  });
+  // Interceptar cambio de rol
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('role-select')) {
+      const userId = e.target.getAttribute('data-user-id');
+      const prevValue = e.target.getAttribute('data-current-role');
+      const roleId = e.target.value;
+      // Restaurar inmediatamente el valor anterior hasta que se confirme
+      e.target.value = prevValue;
+      showReauthModal('role', userId, roleId, e.target);
+      e.target.setAttribute('data-prev-value', prevValue);
+    }
+  });
+  // Si se cancela el modal, NO cambiar el valor visual ni en la DB
+  document.getElementById('reauthModal').addEventListener('hidden.bs.modal', function() {
+    if (reauthAction === 'role' && reauthTarget) {
+      // Restaurar el valor anterior solo si NO se confirmó
+      if (reauthTarget.value !== reauthTarget.getAttribute('data-prev-value')) {
+        reauthTarget.value = reauthTarget.getAttribute('data-prev-value');
+      }
+    }
+    reauthAction = null;
+    reauthUserId = null;
+    reauthRoleId = null;
+    reauthTarget = null;
+  });
+  // Confirmar en el modal
+  document.getElementById('reauthConfirmBtn').addEventListener('click', function() {
+    const password = document.getElementById('reauthPassword').value;
+    if (!password) return;
+    fetch('/reauthenticate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+      body: 'password=' + encodeURIComponent(password)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('reauthModal'));
+        modal.hide();
+        if (reauthAction === 'disable' && reauthTarget) {
+          fetch('/admin/disable_user', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+            body: 'user_id=' + encodeURIComponent(reauthUserId)
+          }).then(() => document.getElementById('refresh-users').click());
+        } else if (reauthAction === 'role' && reauthTarget) {
+          fetch('/admin/set_role', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+            body: 'user_id=' + encodeURIComponent(reauthUserId) + '&role_id=' + encodeURIComponent(reauthRoleId)
+          }).then(() => {
+            // Refrescar la tabla de usuarios para que el select se actualice correctamente
+            document.getElementById('refresh-users').click();
+          });
+        }
+      } else {
+        document.getElementById('reauthError').textContent = data.msg || 'Contraseña incorrecta';
+        document.getElementById('reauthError').style.display = 'block';
+      }
+    });
+  });
+});
+  </script>
 </body>
 </html>
