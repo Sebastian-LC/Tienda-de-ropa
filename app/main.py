@@ -243,17 +243,8 @@ class Handler(BaseHTTPRequestHandler):
                 error_message_div = f'<div id="error-message" class="alert alert-danger" role="alert">{msg}</div>' if msg else ''
                 self.respond(403, render_template("login.html", error_message_div=error_message_div, email=email))
                 return
-            html = f"""
-                <html><body>
-                <h2>{msg}</h2>
-                <form action="/verify-2fa" method="post">
-                Código 2FA: <input name="code" /><br/>
-                <input name="token" value="{token}" type="hidden" />
-                <button type="submit">Verificar</button>
-                </form>
-                </body></html>
-            """
-            self.respond(200, html)
+            # Redirigir a 2fa.html con el token y mensaje
+            self.respond(200, render_template("2fa.html", token=token, msg=msg))
 
         # 🔹 Verificación 2FA
         elif self.path == "/verify-2fa":

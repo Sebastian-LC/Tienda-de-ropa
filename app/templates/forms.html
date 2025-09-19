@@ -106,7 +106,9 @@
 <body>
     <div class="card register-card">
         <div class="card-body">
+            <!-- Mensaje de error -->
             {error_message_div}
+            <div id="form-error" class="alert alert-danger d-none" role="alert"></div>
             <!-- Logo -->
             <img src="../../static/logo/logopequeño.png" alt="JAANSTYLE" class="logo-img">
 
@@ -146,14 +148,24 @@
     </div>
 
     <script>
-        // Validación básica de contraseña
+        // Validación básica de formulario de registro
         document.querySelector('form').addEventListener('submit', function (e) {
+            const username = document.querySelector('input[name="username"]').value.trim();
+            const email = document.querySelector('input[name="email"]').value.trim();
             const password = document.querySelector('input[name="password"]').value;
             const confirmPassword = document.querySelector('input[name="confirm_password"]').value;
-
-            if (password !== confirmPassword) {
+            let errorMsg = '';
+            if (!username) errorMsg = 'El nombre es obligatorio.';
+            else if (!email) errorMsg = 'El correo electrónico es obligatorio.';
+            else if (!/^\S+@\S+\.\S+$/.test(email)) errorMsg = 'El correo electrónico no es válido.';
+            else if (!password) errorMsg = 'La contraseña es obligatoria.';
+            else if (password.length < 6) errorMsg = 'La contraseña debe tener al menos 6 caracteres.';
+            else if (password !== confirmPassword) errorMsg = 'Las contraseñas no coinciden.';
+            if (errorMsg) {
                 e.preventDefault();
-                alert('Las contraseñas no coinciden. Por favor, inténtalo de nuevo.');
+                const errorDiv = document.getElementById('form-error');
+                errorDiv.textContent = errorMsg;
+                errorDiv.classList.remove('d-none');
             }
         });
     </script>

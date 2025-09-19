@@ -6,15 +6,31 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>Verificación en dos pasos</h1>
-        <form action="/verify-2fa" method="post">
-            <label for="code">Código 2FA enviado a tu correo:</label>
-            <input type="text" id="code" name="code" required>
+    <div class="container mt-5" style="max-width:400px;">
+        <h1 class="mb-3">Verificación en dos pasos</h1>
+        <div class="alert alert-info">{msg}</div>
+        <form action="/verify-2fa" method="post" id="fa-form">
+            <label for="code" class="form-label">Código 2FA enviado a tu correo:</label>
+            <input type="text" id="code" name="code" class="form-control mb-2" required>
             <input type="hidden" name="token" value="{token}">
-            <button type="submit">Verificar</button>
+            <div id="fa-error" class="alert alert-danger d-none" role="alert"></div>
+            <button type="submit" class="btn btn-primary w-100">Verificar</button>
         </form>
         <a href="/">Volver al inicio</a>
     </div>
+    <script>
+    document.getElementById('fa-form').addEventListener('submit', function(e) {
+      const code = document.getElementById('code').value.trim();
+      let errorMsg = '';
+      if (!code) errorMsg = 'El código es obligatorio.';
+      else if (!/^\d{4,8}$/.test(code)) errorMsg = 'El código debe ser numérico.';
+      if (errorMsg) {
+        e.preventDefault();
+        const errorDiv = document.getElementById('fa-error');
+        errorDiv.textContent = errorMsg;
+        errorDiv.classList.remove('d-none');
+      }
+    });
+    </script>
 </body>
 </html>

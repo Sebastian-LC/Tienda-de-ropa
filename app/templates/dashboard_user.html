@@ -109,7 +109,8 @@
       <!-- Creación de Prenda -->
       <section id="creacion-prenda" class="p-3 rounded mb-3">
         <h2 class="text-warning">Creación de Prenda</h2>
-        <form>
+        <div id="prenda-error" class="alert alert-danger d-none" role="alert"></div>
+        <form id="prenda-form">
           <!-- Tipo de prenda -->
           <div class="mb-3">
             <label for="tipo-prenda" class="form-label">Tipo de prenda</label>
@@ -203,7 +204,8 @@
       <section id="consultas" class="p-3 rounded mb-3">
         <h2 class="text-warning">Consultas</h2>
         <p>Si tienes alguna duda o necesitas ayuda, escríbenos aquí:</p>
-        <form>
+        <div id="consulta-error" class="alert alert-danger d-none" role="alert"></div>
+        <form id="consulta-form">
           <div class="mb-3">
             <label for="nombre" class="form-label">Nombre</label>
             <input
@@ -250,5 +252,37 @@
         </a>
       </div>
     </footer>
+  <script>
+  // Validación de creación de prenda
+  document.getElementById('prenda-form').addEventListener('submit', function(e) {
+    const tipo = document.getElementById('tipo-prenda').value.trim();
+    const errorDiv = document.getElementById('prenda-error');
+    let errorMsg = '';
+    if (!tipo) errorMsg = 'Debes seleccionar un tipo de prenda.';
+    // Puedes agregar más validaciones aquí si hay más campos obligatorios
+    if (errorMsg) {
+      e.preventDefault();
+      errorDiv.textContent = errorMsg;
+      errorDiv.classList.remove('d-none');
+    }
+  });
+  // Validación de consultas
+  document.getElementById('consulta-form').addEventListener('submit', function(e) {
+    const nombre = document.getElementById('nombre').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const mensaje = document.getElementById('mensaje').value.trim();
+    const errorDiv = document.getElementById('consulta-error');
+    let errorMsg = '';
+    if (!nombre) errorMsg = 'El nombre es obligatorio.';
+    else if (!email) errorMsg = 'El correo es obligatorio.';
+    else if (!/^\S+@\S+\.\S+$/.test(email)) errorMsg = 'El correo electrónico no es válido.';
+    else if (!mensaje) errorMsg = 'El mensaje es obligatorio.';
+    if (errorMsg) {
+      e.preventDefault();
+      errorDiv.textContent = errorMsg;
+      errorDiv.classList.remove('d-none');
+    }
+  });
+  </script>
   </body>
 </html>
