@@ -28,23 +28,32 @@ def create_user(username, email, password) -> tuple[bool, str]:
         print("Fallo en password:", pmsg)
         return False, pmsg
 
-    salt = gen_salt()
-    phash = hash_password(password, salt)
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
+        # Verificar correo único (HU-04)
+        cur.execute("SELECT 1 FROM users WHERE email = ?", (email,))
+        if cur.fetchone():
+            return False, "El correo ya está registrado."
+        cur.execute("SELECT 1 FROM users WHERE username = ?", (username,))
+        if cur.fetchone():
+            return False, "El nombre de usuario ya existe."
+        salt = gen_salt()
+        phash = hash_password(password, salt)
         cur.execute("INSERT INTO users (username, email, password_hash, salt) VALUES (?, ?, ?, ?)", (username, email, phash, salt))
-        db.commit()
         user_id = cur.lastrowid
+        # Asignar rol 'usuario' automáticamente
+        cur.execute("SELECT id FROM roles WHERE role_name = 'usuario'")
+        row = cur.fetchone()
+        if row:
+            usuario_role_id = row[0]
+            cur.execute("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", (user_id, usuario_role_id))
+        db.commit()
         print("Usuario creado con id:", user_id)
         log_db_action(user_id, "CREATED USER")
         return True, "Usuario creado."
     except sqlite3.IntegrityError as e:
         print("IntegrityError:", e)
-        if "email" in str(e).lower():
-            return False, "El correo ya está registrado."
-        if "username" in str(e).lower():
-            return False, "El nombre de usuario ya existe."
         return False, "Error de integridad."
     finally:
         db.close()
@@ -54,7 +63,7 @@ def find_user_by_email(email):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT id, username, email, password_hash, salt, failed_attempts, blocked FROM users WHERE email = ?", (email,))
+        cur.execute("SELECT id, username, email, password_hash, salt, failed_attempts, blocked, enabled FROM users WHERE email = ?", (email,))
         row = cur.fetchone()
         return row
     finally:
@@ -89,7 +98,7 @@ def get_user_by_id(user_id):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT id, username, email FROM users WHERE id = ?", (user_id,))
+        cur.execute("SELECT id, username, email FROM users WHERE id = ? AND enabled = 1", (user_id,))
         row = cur.fetchone()
         if not row:
             return None
@@ -134,7 +143,10 @@ def login(email, password, client_ip):
         # log attempt with user_id = None
         log_access_attempt(None, client_ip, False)
         return False, "Credenciales inválidas.", None
-    user_id, username, email, phash, salt, failed_attempts, blocked = user
+    user_id, username, email, phash, salt, failed_attempts, blocked, enabled = user
+    if not enabled:
+        log_access_attempt(user_id, client_ip, False)
+        return False, "Usuario deshabilitado. Contacte a un administrador.", None
     if blocked:
         log_access_attempt(user_id, client_ip, False)
         return False, "Cuenta bloqueada. Contacte a un administrador.", None
@@ -194,13 +206,18 @@ def require_session(session_id):
     s = SESSIONS.get(session_id)
     if not s:
         return False, None
-    # check inactivity
-    if datetime.utcnow() > s["expires_at"]:
+    # check inactivity (HU-19)
+    now_ = datetime.utcnow()
+    if now_ > s["expires_at"]:
         del SESSIONS[session_id]
         return False, None
-    # update last activity and expiry
-    s["last_activity"] = datetime.utcnow()
-    s["expires_at"] = datetime.utcnow() + timedelta(seconds=settings.SESSION_TIMEOUT_SECONDS)
+    # Si han pasado más de 10 minutos desde la última actividad, cerrar sesión
+    if (now_ - s["last_activity"]).total_seconds() > 600:
+        del SESSIONS[session_id]
+        return False, None
+    # update last activity y renovar expiración
+    s["last_activity"] = now_
+    s["expires_at"] = now_ + timedelta(seconds=settings.SESSION_TIMEOUT_SECONDS)
     return True, s
 
 def logout(session_id):

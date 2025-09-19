@@ -106,6 +106,7 @@
 <body>
     <div class="card register-card">
         <div class="card-body">
+            {error_message_div}
             <!-- Logo -->
             <img src="../../static/logo/logopequeño.png" alt="JAANSTYLE" class="logo-img">
 
@@ -115,12 +116,12 @@
             <form action="/forms" method="POST">
     <div class="input-group">
         <i class="bi bi-person input-icon"></i>
-        <input type="text" class="form-control" name="username" placeholder="Nombre" required>
+        <input type="text" class="form-control" name="username" placeholder="Nombre" required value="{username}">
     </div>
 
     <div class="input-group">
         <i class="bi bi-envelope input-icon"></i>
-        <input type="email" class="form-control" name="email" placeholder="Correo electrónico" required>
+        <input type="email" class="form-control" name="email" placeholder="Correo electrónico" required value="{email}">
     </div>
 
     <div class="input-group">

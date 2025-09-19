@@ -63,6 +63,7 @@
 <body>
   <div class="card login-card">
     <div class="card-body">
+  {error_message_div}
       <img src="logo/logopequeño.png" alt="JAANSTYLE" class="logo-img">
       
       <h2>Iniciar sesión</h2>
@@ -70,13 +71,13 @@
       <form action="/login" method="POST">
         <div class="mb-3 input-group">
           <i class="bi bi-person input-icon"></i>
-          <input type="text" class="form-control" name="email" placeholder="Email" required>
+          <input type="text" class="form-control" name="email" placeholder="Email" required value="{email}">
         </div>
         <div class="mb-3 input-group">
           <i class="bi bi-lock input-icon"></i>
           <input type="password" class="form-control" name="password" placeholder="Contraseña" required>
         </div>
-        <a href="#" class="d-block mb-2 small">¿Has olvidado la contraseña?</a>
+        <a href="/forgot-password" class="d-block mb-2 small">¿Has olvidado la contraseña?</a>
         <button type="submit" class="btn btn-login w-100">Ingresar</button>
       </form>
 

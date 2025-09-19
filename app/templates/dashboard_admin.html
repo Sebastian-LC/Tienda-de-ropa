@@ -31,6 +31,41 @@
 
   <!-- Contenido -->
   <main class="content container my-4">
+    <!-- Gestión de Usuarios -->
+    <section id="usuarios" class="p-3 rounded mb-3">
+  <h2 class="text-primary">Gestión de Usuarios</h2>
+  <button id="refresh-users" class="btn btn-sm btn-outline-primary mb-2" type="button">Actualizar</button>
+  <table class="table table-bordered table-hover text-center align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Estado</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- loop users -->
+          <tr>
+            <td>{item.id}</td>
+            <td>{item.username}</td>
+            <td>{item.email}</td>
+            <td>
+              <span class="badge bg-{item.enabled_class} text-dark">{item.enabled}</span>
+            </td>
+            <td>
+              <!-- Botón dinámico según estado -->
+              <form method="POST" action="/admin/disable_user" style="display:inline;">
+                <input type="hidden" name="user_id" value="{item.id}">
+                <button type="submit" class="btn btn-sm {item.enabled_btn_class}">{item.enabled_btn_text}</button>
+              </form>
+            </td>
+          </tr>
+          <!-- endloop -->
+        </tbody>
+      </table>
+    </section>
     <!-- Gestión del Catálogo -->
     <section id="catalogo" class="p-3 rounded mb-3">
       <h2 class="text-warning">Gestión del Catálogo</h2>
@@ -85,6 +120,28 @@
             <td>En proceso</td>
           </tr>
         </tbody>
+      </table>
+      <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const refreshBtn = document.getElementById('refresh-users');
+        if (refreshBtn) {
+          refreshBtn.addEventListener('click', function() {
+            fetch('/admin/users', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+              .then(r => r.text())
+              .then(html => {
+                // Extraer solo el tbody de la tabla de usuarios
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTbody = doc.querySelector('#usuarios tbody');
+                const oldTbody = document.querySelector('#usuarios tbody');
+                if (newTbody && oldTbody) {
+                  oldTbody.innerHTML = newTbody.innerHTML;
+                }
+              });
+          });
+        }
+      });
+      </script>
       </table>
     </section>
   </main>

@@ -1,8 +1,8 @@
    /* Ajuste del logo */
-   .navbar-brand img {
+    .navbar-brand img {
      height: 40px; /* tamaño pequeño y proporcionado */
      width: auto; /* mantiene proporción */
-   }
+    }
 
    /* Estilos de la barra de navegación */
 .navbar {

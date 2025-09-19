@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Verificación 2FA</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Verificación en dos pasos</h1>
+        <form action="/verify-2fa" method="post">
+            <label for="code">Código 2FA enviado a tu correo:</label>
+            <input type="text" id="code" name="code" required>
+            <input type="hidden" name="token" value="{token}">
+            <button type="submit">Verificar</button>
+        </form>
+        <a href="/">Volver al inicio</a>
+    </div>
+</body>
+</html>

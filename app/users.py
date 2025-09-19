@@ -40,14 +40,18 @@ def delete_user(requesting_user_id, target_user_id, password_confirmation):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT COUNT(1) FROM orders WHERE user_id = ?", (target_user_id,))
+        # Verificar pedidos activos
+        cur.execute("SELECT COUNT(1) FROM orders WHERE user_id = ? AND status != 'finalizado'", (target_user_id,))
         if cur.fetchone()[0] > 0:
-            return False, "El usuario tiene pedidos activos; no se puede eliminar."
-        # else delete
-        cur.execute("DELETE FROM user_roles WHERE user_id = ?", (target_user_id,))
-        cur.execute("DELETE FROM users WHERE id = ?", (target_user_id,))
+            return False, "El usuario tiene pedidos activos; no se puede deshabilitar."
+        # Verificar otras dependencias (ejemplo: registros en otras tablas)
+        cur.execute("SELECT COUNT(1) FROM audit_log WHERE user_id = ?", (target_user_id,))
+        if cur.fetchone()[0] > 0:
+            return False, "El usuario tiene registros de auditoría; no se puede deshabilitar."
+        # Deshabilitar usuario en vez de eliminar
+        cur.execute("UPDATE users SET enabled = 0 WHERE id = ?", (target_user_id,))
         db.commit()
-        log_db_action(requesting_user_id, f"DELETED USER {target_user_id}")
-        return True, "Usuario eliminado."
+        log_db_action(requesting_user_id, f"DISABLED USER {target_user_id}")
+        return True, "Usuario deshabilitado."
     finally:
         db.close()
