@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Verificación 2FA</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -20,16 +21,16 @@
     </div>
     <script>
     document.getElementById('fa-form').addEventListener('submit', function(e) {
-      const code = document.getElementById('code').value.trim();
-      let errorMsg = '';
-      if (!code) errorMsg = 'El código es obligatorio.';
-      else if (!/^\d{4,8}$/.test(code)) errorMsg = 'El código debe ser numérico.';
-      if (errorMsg) {
+        const code = document.getElementById('code').value.trim();
+        let errorMsg = '';
+        if (!code) errorMsg = 'El código es obligatorio.';
+        else if (!/^\d{4,8}$/.test(code)) errorMsg = 'El código debe ser numérico.';
+        if (errorMsg) {
         e.preventDefault();
         const errorDiv = document.getElementById('fa-error');
         errorDiv.textContent = errorMsg;
         errorDiv.classList.remove('d-none');
-      }
+        }
     });
     </script>
 </body>

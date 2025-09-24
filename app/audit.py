@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 
 def log_db_action(user_id, action):
+    """Registra una acción en la base de datos y en el log de auditoría."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         db.execute("INSERT INTO audit_log (user_id, action) VALUES (?, ?)", (user_id, action))
@@ -17,6 +18,7 @@ def log_db_action(user_id, action):
         f.write(f"{datetime.utcnow().isoformat()} | user:{user_id} | {action}\n")
 
 def log_access_attempt(user_id, ip, success):
+    """Registra un intento de acceso (login) en la base de datos y log de accesos."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         db.execute("INSERT INTO access_log (user_id, ip_address, success) VALUES (?, ?, ?)", (user_id, ip, int(bool(success))))

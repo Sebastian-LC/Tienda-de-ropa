@@ -4,6 +4,7 @@ from .audit import log_db_action
 from config import settings
 
 def assign_role(requesting_user_id, target_user_id, role_name):
+    """Asigna un rol a un usuario, validando permisos del solicitante."""
     # check requesting_user has 'admin' role
     from .auth import get_roles_for_user
     if "admin" not in get_roles_for_user(requesting_user_id):
@@ -30,6 +31,7 @@ def assign_role(requesting_user_id, target_user_id, role_name):
         db.close()
 
 def delete_user(requesting_user_id, target_user_id, password_confirmation):
+    """Deshabilita un usuario tras reautenticación y validaciones de dependencias."""
     # require reauthentication of requesting user (HU-10)
     from .auth import reauthenticate, get_roles_for_user
     if "admin" not in get_roles_for_user(requesting_user_id):

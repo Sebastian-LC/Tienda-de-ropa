@@ -12,6 +12,7 @@ import os
 SESSIONS = {}
 
 def create_user(username, email, password) -> tuple[bool, str]:
+    """Crea un nuevo usuario con validaciones y rol por defecto."""
     print("==== DEBUG CREATE_USER ====")
     print("Username:", username)
     print("Email:", email)
@@ -60,6 +61,7 @@ def create_user(username, email, password) -> tuple[bool, str]:
 
 
 def find_user_by_email(email):
+    """Busca un usuario por email y retorna sus datos."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -70,6 +72,7 @@ def find_user_by_email(email):
         db.close()
 
 def get_user_orders(user_id):
+    """Obtiene los pedidos de un usuario por su ID."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -107,6 +110,7 @@ def get_user_by_id(user_id):
         db.close()
 
 def increment_failed_attempts(user_id):
+    """Incrementa el contador de intentos fallidos de login para un usuario."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -132,6 +136,7 @@ def increment_failed_attempts(user_id):
         db.close()
 
 def reset_failed_attempts(user_id):
+    """Reinicia el contador de intentos fallidos de login para un usuario."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         db.execute("UPDATE users SET failed_attempts = 0 WHERE id = ?", (user_id,))
@@ -140,6 +145,7 @@ def reset_failed_attempts(user_id):
         db.close()
 
 def login(email, password, client_ip):
+    """Realiza el proceso de login, validando credenciales y estado del usuario."""
     user = find_user_by_email(email)
     if not user:
         log_access_attempt(None, client_ip, False)
@@ -188,6 +194,7 @@ def login(email, password, client_ip):
     return True, "Se ha enviado un código 2FA al correo.", token, None
 
 def verify_2fa(token, code, client_ip):
+    """Verifica el código 2FA y crea la sesión si es correcto."""
     ses = SESSIONS.get(token)
     if not ses:
         return False, "Token inválido o expirado.", None
@@ -226,6 +233,7 @@ def verify_2fa(token, code, client_ip):
 
 
 def require_session(session_id):
+    """Valida y renueva una sesión activa por session_id."""
     s = SESSIONS.get(session_id)
     if not s:
         return False, None
@@ -244,12 +252,14 @@ def require_session(session_id):
     return True, s
 
 def logout(session_id):
+    """Cierra la sesión del usuario y registra el logout."""
     if session_id in SESSIONS:
         user_id = SESSIONS[session_id]["user_id"]
         del SESSIONS[session_id]
         log_db_action(user_id, "LOGOUT")
 
 def get_roles_for_user(user_id):
+    """Obtiene la lista de roles asignados a un usuario."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -259,6 +269,7 @@ def get_roles_for_user(user_id):
         db.close()
 
 def get_user_role_id(user_id):
+    """Obtiene el ID de rol principal de un usuario."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -269,6 +280,7 @@ def get_user_role_id(user_id):
         db.close()
 
 def reauthenticate(user_id, password_attempt):
+    """Verifica la contraseña del usuario para reautenticación en acciones sensibles."""
     # used for sensitive actions (HU-10)
     db = sqlite3.connect(settings.DB_PATH)
     try:

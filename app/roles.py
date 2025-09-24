@@ -4,6 +4,7 @@ from config import settings
 from .audit import log_db_action
 
 def request_role_change(requesting_admin_id, target_user_id, new_role):
+    """Solicita un cambio de rol para un usuario, requiere admin."""
     # requesting_admin must be admin
     from .auth import get_roles_for_user
     if "admin" not in get_roles_for_user(requesting_admin_id):
@@ -19,6 +20,7 @@ def request_role_change(requesting_admin_id, target_user_id, new_role):
         db.close()
 
 def approve_role_change(approving_admin_id, request_id):
+    """Aprueba una solicitud de cambio de rol y la aplica si es válida."""
     from .auth import get_roles_for_user
     if "admin" not in get_roles_for_user(approving_admin_id):
         return False, "No autorizado."

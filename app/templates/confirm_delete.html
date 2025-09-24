@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Confirmar eliminación</title>
     <link rel="stylesheet" href="/static/error.css">
 </head>
@@ -12,7 +13,7 @@
             <input type="hidden" name="user_id" value="{user_id}">
             <p>¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.</p>
             <label>Confirma tu contraseña para continuar:</label>
-            <input type="password" name="password_confirmation" required>
+            <input type="password" name="password_confirmation" required placeholder="Confirma tu contraseña" title="Confirma tu contraseña">
             <button type="submit">Eliminar</button>
             <a href="/dashboard">Cancelar</a>
         </form>

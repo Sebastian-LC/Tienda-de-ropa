@@ -4,6 +4,7 @@ import csv
 from typing import Tuple, List
 
 def validate_password(password: str) -> Tuple[bool, str]:
+    """Valida la fortaleza de una contraseña según reglas de seguridad."""
     if len(password) < 8:
         return False, "La contraseña debe tener al menos 8 caracteres."
     if not re.search(r"[A-Z]", password):
@@ -17,15 +18,18 @@ def validate_password(password: str) -> Tuple[bool, str]:
     return True, ""
 
 def validate_email(email: str) -> bool:
+    """Valida si el email tiene formato correcto."""
     return re.match(r"[^@]+@[^@]+\.[^@]+", email) is not None
 
 def validate_required(fields: dict) -> Tuple[bool, str]:
+    """Valida que todos los campos requeridos estén presentes y no vacíos."""
     for k, v in fields.items():
         if v is None or str(v).strip() == "":
             return False, f"El campo '{k}' es obligatorio."
     return True, ""
 
 def validate_csv_file(path: str) -> Tuple[bool, List[str]]:
+    """Valida la estructura y contenido de un archivo CSV."""
     errors = []
     try:
         with open(path, newline="", encoding="utf-8") as f:

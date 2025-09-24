@@ -6,16 +6,20 @@ from datetime import datetime
 from config import settings
 
 def gen_salt(n=16):
+    """Genera un salt aleatorio en hexadecimal."""
     return binascii.hexlify(os.urandom(n)).decode()
 
 def hash_password(password, salt, iterations=100_000):
+    """Genera el hash de una contraseña usando PBKDF2-HMAC-SHA256."""
     dk = hashlib.pbkdf2_hmac("sha256", password.encode(), binascii.unhexlify(salt), iterations)
     return binascii.hexlify(dk).decode()
 
 def verify_password(password, salt_hex, stored_hash):
+    """Verifica si la contraseña y salt generan el hash esperado."""
     return hash_password(password, salt_hex) == stored_hash
 
 def gen_2fa_code():
+    """Genera un código 2FA de 6 dígitos aleatorio."""
     return f"{random.randint(0,999999):06d}"
 
 import smtplib
@@ -24,6 +28,7 @@ from email.mime.multipart import MIMEMultipart
 from config import settings
 
 def send_email(to_email, subject, message, html=False):
+    """Envía un correo electrónico usando SMTP y los datos de settings."""
     try:
         msg = MIMEMultipart("alternative")
         msg["From"] = settings.SMTP_USER
@@ -48,6 +53,7 @@ def send_email(to_email, subject, message, html=False):
 
 
 def build_2fa_email(username: str, code: str) -> str:
+    """Construye el HTML del correo para el código 2FA."""
     return f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
@@ -79,6 +85,7 @@ def build_2fa_email(username: str, code: str) -> str:
 
 
 def now():
+    """Retorna la fecha y hora actual en formato ISO (UTC)."""
     return datetime.utcnow().isoformat(timespec='seconds')
 
 

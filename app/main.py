@@ -1,6 +1,6 @@
 import sys, os
 
-# 🔧 Fix: aseguramos que la raíz (un nivel arriba de /app) esté en sys.path
+#  Fix: aseguramos que la raíz (un nivel arriba de /app) esté en sys.path
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
@@ -19,6 +19,7 @@ from .audit import log_db_action
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
 def render_template(name, **ctx):
+    """Renderiza una plantilla HTML con variables y loops simples."""
     with open(os.path.join(TEMPLATES_DIR, name), "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -66,6 +67,7 @@ def render_template(name, **ctx):
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        """Maneja las peticiones GET: rutas, estáticos, dashboards, AJAX."""
         # Servir archivos estáticos
         if self.path.startswith("/static/"):
             static_path = self.path.lstrip("/")
@@ -196,6 +198,7 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, "Not Found")
 
     def do_POST(self):
+        """Maneja las peticiones POST: login, registro, 2FA, acciones admin, etc."""
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length).decode()
         params = parse_qs(body)
@@ -312,6 +315,7 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(404, "Not Found")
 
     def get_session(self):
+        """Obtiene el session_id de la cookie del usuario."""
         cookie = self.headers.get("Cookie")
         if not cookie:
             return None
@@ -322,11 +326,13 @@ class Handler(BaseHTTPRequestHandler):
         return None
 
     def redirect(self, path):
+        """Redirige al usuario a otra ruta."""
         self.send_response(302)
         self.send_header("Location", path)
         self.end_headers()
 
     def respond(self, code, body, content_type="text/html"):
+        """Envía una respuesta HTTP con el código, cuerpo y tipo de contenido."""
         if isinstance(body, str):
             body = body.encode("utf-8")
         self.send_response(code)
@@ -337,6 +343,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def run():
+    """Inicia el servidor HTTP(S) y lo deja escuchando hasta que se detenga."""
     os.chdir(os.path.dirname(__file__))
 
     use_tls = security.ensure_certs_exist()
