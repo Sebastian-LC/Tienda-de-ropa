@@ -23,7 +23,7 @@ SESSION_TIMEOUT = 300
 MAX_FAILED_ATTEMPTS = 3
 
 # Tiempo de expiración de sesión en segundos (ej: 30 minutos)
-SESSION_TIMEOUT_SECONDS = 300  # 5 minutos
+SESSION_TIMEOUT_SECONDS = 600  # 10 minutos
 
 
 # Configuración de correo (para HU-03: 2FA por correo)

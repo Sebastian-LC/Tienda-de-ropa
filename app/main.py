@@ -10,6 +10,7 @@ from urllib.parse import parse_qs
 import json
 import sqlite3
 import re
+from datetime import datetime
 
 # Ahora ya puede importar config y los módulos locales
 from config import settings
@@ -145,14 +146,13 @@ class Handler(BaseHTTPRequestHandler):
                 users = []
                 for row in cur.fetchall():
                     enabled = row[3]
-                    enabled_str = "danger" if enabled else "secondary"
-                    enabled_label = "Deshabilitado" if enabled else "Habilitado"
-                    btn_text = "Habilitado" if enabled == 1 else "Deshabilitado"
-                    btn_class = "btn-success" if enabled == 1 else "btn-secondary"
-                    # Reversed colors for buttons
-                    disabled_btn_class = "btn-secondary" if enabled == 1 else "btn-success"
-                    disabled_btn_text = "Deshabilitado" if enabled == 1 else "Habilitado"
-                    disabled = "Habilitado" if enabled else "Deshabilitado"
+                    enabled_label = "Habilitado" if enabled else "Deshabilitado"
+                    enabled_class = "success" if enabled else "danger"
+                    btn_text = "Deshabilitar" if enabled else "Habilitar"
+                    btn_class = "btn-danger" if enabled else "btn-success"
+                    disabled_btn_class = "btn-success" if enabled else "btn-danger"
+                    disabled_btn_text = "Habilitar" if enabled else "Deshabilitar"
+                    disabled = "Deshabilitado" if enabled else "Habilitado"
                     # Obtener el rol actual
                     from . import auth as authmod
                     role_id = authmod.get_user_role_id(row[0])
@@ -161,7 +161,7 @@ class Handler(BaseHTTPRequestHandler):
                         "username": row[1],
                         "email": row[2],
                         "enabled": enabled_label,
-                        "enabled_class": enabled_str,
+                        "enabled_class": enabled_class,
                         "enabled_btn_text": btn_text,
                         "enabled_btn_class": btn_class,
                         "disabled_btn_class": disabled_btn_class,
@@ -218,20 +218,20 @@ class Handler(BaseHTTPRequestHandler):
                     cur.execute("SELECT id, username, email, enabled FROM users")
                 for row in cur.fetchall():
                     enabled = row[3]
-                    enabled_str = "danger" if enabled else "secondary"
-                    enabled_label = "Deshabilitado" if enabled else "Habilitado"
-                    btn_text = "Habilitado" if enabled == 1 else "Deshabilitado"
-                    btn_class = "btn-success" if enabled == 1 else "btn-secondary"
-                    disabled_btn_class = "btn-secondary" if enabled == 1 else "btn-success"
-                    disabled_btn_text = "Deshabilitado" if enabled == 1 else "Habilitado"
-                    disabled = "Habilitado" if enabled else "Deshabilitado"
+                    enabled_label = "Habilitado" if enabled else "Deshabilitado"
+                    enabled_class = "success" if enabled else "danger"
+                    btn_text = "Deshabilitar" if enabled else "Habilitar"
+                    btn_class = "btn-danger" if enabled else "btn-success"
+                    disabled_btn_class = "btn-success" if enabled else "btn-danger"
+                    disabled_btn_text = "Habilitar" if enabled else "Deshabilitar"
+                    disabled = "Deshabilitado" if enabled else "Habilitado"
                     role_id = auth.get_user_role_id(row[0])
                     users.append({
                         "id": row[0],
                         "username": row[1],
                         "email": row[2],
                         "enabled": enabled_label,
-                        "enabled_class": enabled_str,
+                        "enabled_class": enabled_class,
                         "enabled_btn_text": btn_text,
                         "enabled_btn_class": btn_class,
                         "disabled_btn_class": disabled_btn_class,
@@ -241,6 +241,26 @@ class Handler(BaseHTTPRequestHandler):
                     })
             finally:
                 db.close()
+            # Si es AJAX, devolver el tbody renderizado
+            if self.headers.get("X-Requested-With") == "XMLHttpRequest":
+                # Renderizar el loop users
+                with open(os.path.join(TEMPLATES_DIR, "dashboard_admin.html"), "r", encoding="utf-8") as f:
+                    content = f.read()
+                import re
+                m = re.search(r"<!-- loop users -->(.*?)<!-- endloop -->", content, re.DOTALL)
+                if m:
+                    loop_template = m.group(1)
+                    rendered = ""
+                    if not users:
+                        rendered = "<tr><td colspan='99' class='text-center'>No hay datos.</td></tr>"
+                    else:
+                        for item in users:
+                            item_html = loop_template
+                            for key, value in item.items():
+                                item_html = item_html.replace(f"{{item.{key}}}", str(value))
+                            rendered += item_html
+                    self.respond(200, rendered)
+                    return
 
         elif self.path == "/admin/roles":
             session_id = self.get_session()
@@ -263,6 +283,24 @@ class Handler(BaseHTTPRequestHandler):
             session = self.get_session()
             auth.logout(session)
             self.redirect("/")
+        elif self.path == "/session_remaining":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok:
+                self.respond(403, json.dumps({"remaining": 0}), content_type="application/json")
+                return
+            remaining = (session_data["expires_at"] - datetime.utcnow()).total_seconds()
+            remaining = max(0, int(remaining))
+            self.respond(200, json.dumps({"remaining": remaining}), content_type="application/json")
+            return
+        elif self.path == "/extend_session":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)  # Renueva la sesión
+            if not ok:
+                self.respond(403, "No autorizado")
+                return
+            self.respond(200, "ok")
+            return
         else:
             self.respond(404, "Not Found")
 
@@ -337,8 +375,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.redirect("/")
                 return
             raw_user_id = params.get("user_id", ["0"])[0]
-            # Limpiar user_id para que solo contenga dígitos
+            # Limpiar user_id para que solo contenga dígitos (eliminar caracteres no numéricos como $)
             user_id_str = ''.join(filter(str.isdigit, raw_user_id))
+            if not user_id_str:
+                self.respond(400, "ID de usuario inválido")
+                return
             user_id = int(user_id_str)
             # No permitir que el admin se deshabilite a sí mismo
             if user_id == session_data["user_id"]:
@@ -429,35 +470,40 @@ class Handler(BaseHTTPRequestHandler):
             if not ok or "admin" not in session_data.get("roles", []):
                 self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
                 return
+            print("DEBUG SEARCH POST: Params =", params)
             username = params.get("username", [""])[0]
+            print("DEBUG SEARCH POST: Username =", repr(username))
             db = sqlite3.connect(settings.DB_PATH)
             try:
                 cur = db.cursor()
                 if username:
+                    print("DEBUG SEARCH POST: Executing query for username =", repr(username))
                     cur.execute("SELECT id, username, email, enabled FROM users WHERE username LIKE ?", (f"%{username}%",))
                 else:
-                    # Si username vacío, cargar todos los usuarios
+                    print("DEBUG SEARCH POST: Executing query for all users")
+                    cur.execute("SELECT id, username, email, enabled FROM users")
+                rows = cur.fetchall()
+                print("DEBUG SEARCH POST: Rows =", rows)
                 users = []
-                for row in cur.fetchall():
+                for row in rows:
                     print(f"DEBUG SEARCH_USER: Usuario encontrado - ID: {row[0]}, Username: '{row[1]}', Email: '{row[2]}', Enabled: {row[3]}")
                     enabled = row[3]
-                    enabled_str = "danger" if enabled else "secondary"
-                    enabled_label = "Deshabilitado" if enabled else "Habilitado"
-                    btn_text = "Habilitado" if enabled == 1 else "Deshabilitado"
-                    btn_class = "btn-success" if enabled == 1 else "btn-secondary"
-                    # Reversed colors for buttons
-                    disabled_btn_class = "btn-secondary" if enabled == 1 else "btn-success"
-                    disabled_btn_text = "Deshabilitado" if enabled == 1 else "Habilitado"
-                    disabled = "Habilitado" if enabled else "Deshabilitado"
+                    enabled_label = "Habilitado" if enabled else "Deshabilitado"
+                    enabled_class = "success" if enabled else "danger"
+                    btn_text = "Deshabilitar" if enabled else "Habilitar"
+                    btn_class = "btn-danger" if enabled else "btn-success"
+                    disabled_btn_class = "btn-success" if enabled else "btn-danger"
+                    disabled_btn_text = "Habilitar" if enabled else "Deshabilitar"
+                    disabled = "Deshabilitado" if enabled else "Habilitado"
                     # Obtener el rol actual
                     from . import auth as authmod
                     role_id = authmod.get_user_role_id(row[0])
                     user_data = {
-                        "id": row[0],
-                        "username": row[1],
-                        "email": row[2],
+                        "id": str(row[0]),
+                        "username": str(row[1]),
+                        "email": str(row[2]),
                         "enabled": enabled_label,
-                        "enabled_class": enabled_str,
+                        "enabled_class": enabled_class,
                         "enabled_btn_text": btn_text,
                         "enabled_btn_class": btn_class,
                         "disabled_btn_class": disabled_btn_class,

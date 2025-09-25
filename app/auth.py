@@ -251,6 +251,22 @@ def require_session(session_id):
     s["expires_at"] = now_ + timedelta(seconds=settings.SESSION_TIMEOUT_SECONDS)
     return True, s
 
+def require_session_no_renew(session_id):
+    """Valida una sesión activa por session_id sin renovarla."""
+    s = SESSIONS.get(session_id)
+    if not s:
+        return False, None
+    # check inactivity (HU-19)
+    now_ = datetime.utcnow()
+    if now_ > s["expires_at"]:
+        del SESSIONS[session_id]
+        return False, None
+    # Si han pasado más de 10 minutos desde la última actividad, cerrar sesión
+    if (now_ - s["last_activity"]).total_seconds() > 600:
+        del SESSIONS[session_id]
+        return False, None
+    return True, s
+
 def logout(session_id):
     """Cierra la sesión del usuario y registra el logout."""
     if session_id in SESSIONS:
