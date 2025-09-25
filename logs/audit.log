@@ -29,3 +29,69 @@
 2025-09-19T09:08:20.823789 | user:4 | LOGIN_SUCCESS_2FA
 2025-09-19T23:29:59.454662 | user:4 | LOGIN_SUCCESS_2FA
 2025-09-24T02:40:35.608763 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T10:29:03.699954 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T10:30:00.810385 | user:4 | LOGOUT
+2025-09-24T10:30:16.644556 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T10:31:52.519457 | user:4 | LOGOUT
+2025-09-24T10:33:46.538343 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T10:45:30.380081 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T10:51:04.939976 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T10:57:18.427594 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T11:14:37.189946 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T11:14:53.104589 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:14:55.341013 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:14:55.866270 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:14:56.369894 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:14:57.122455 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:15:01.584019 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:15:02.098078 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:15:02.700015 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:15:02.863071 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:15:03.022207 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:15:03.358288 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:18:05.441098 | user:5 | CREATED USER
+2025-09-24T11:19:37.743707 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T11:19:59.073305 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com
+2025-09-24T11:24:28.654494 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:25:12.701862 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T11:25:19.628760 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com
+2025-09-24T11:29:52.900415 | user:4 | UPDATED USER 5 to username=adminn, email=admin@example.com
+2025-09-24T11:29:57.899641 | user:4 | UPDATED USER 5 to username=admin, email=admin@example.com
+2025-09-24T11:35:00.048164 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:35:01.987556 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:35:02.324216 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:35:02.716285 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:35:03.399359 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:35:08.337765 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com
+2025-09-24T11:35:33.465406 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T11:35:41.569939 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:35:45.822432 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com
+2025-09-24T11:43:32.152122 | user:4 | UPDATED USER 1 to username=Drahune, email=yarlenis_velez@hotmail.com
+2025-09-24T11:43:35.858807 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com
+2025-09-24T11:47:29.108632 | user:6 | CREATED USER
+2025-09-24T11:48:30.526138 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T11:49:01.282192 | user:7 | CREATED USER
+2025-09-24T11:52:20.686980 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:52:25.153259 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com
+2025-09-24T11:59:44.847511 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-24T11:59:48.929525 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com
+2025-09-24T12:25:22.907968 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T12:29:04.910714 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T12:31:53.561939 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T12:36:38.295554 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T12:43:17.618915 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T12:55:45.009393 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T13:04:06.263610 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T13:12:35.617788 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T13:33:05.992381 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T13:35:30.850406 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-24T13:37:23.519022 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T00:00:35.898508 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T00:38:27.252485 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T01:15:23.412996 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T01:38:14.509383 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T01:47:37.439356 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T01:55:20.603384 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T02:30:27.213480 | user:4 | LOGIN_SUCCESS_2FA
+2025-09-25T02:31:22.138761 | user:4 | UPDATED USER 1 to username=Drahunerr, email=yarlenis_velez@hotmail.com
+2025-09-25T02:31:30.417869 | user:4 | UPDATED USER 1 to username=Drahuner, email=yarlenis_velez@hotmail.com

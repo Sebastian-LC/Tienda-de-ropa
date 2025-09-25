@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscar Usuarios - JAANSTYLE</title>
+  <link rel="stylesheet" href="../../static/style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand d-flex align-items-center" href="/dashboard">
+        <img src="../../static/logo/logopequeño.png" alt="JAANSTYLE" style="height:30px;margin-right:8px;">
+        <span class="fw-bold">JAANSTYLE - Admin</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/admin/users">Gestión de Usuarios</a></li>
+          <li class="nav-item"><a class="nav-link" href="/logout">Logout <i class="fa fa-sign-out-alt"></i></a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenido -->
+  <main class="content container my-4">
+    <h1 class="text-center mb-4">Buscar Usuarios</h1>
+
+    <!-- Formulario de búsqueda -->
+    <div class="mb-4">
+      <form class="d-flex">
+        <input type="text" name="q" class="form-control me-2" placeholder="Buscar por nombre de usuario..." value="{q}">
+        <button type="submit" class="btn btn-primary me-2">
+          <i class="fas fa-search"></i> Buscar
+        </button>
+        <button type="button" id="loadAllBtn" class="btn btn-secondary">
+          <i class="fas fa-refresh"></i> Actualizar
+        </button>
+      </form>
+    </div>
+
+    <!-- Tabla de resultados -->
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover text-center align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>ID</th>
+            <th>Usuario</th>
+            <th>Email</th>
+            <th>Estado/Acción</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- loop users -->
+          <tr>
+            <td>{item.id}</td>
+            <td>{item.username}</td>
+            <td>{item.email}</td>
+            <td>
+              <form method="POST" action="/admin/disable_user" style="display:inline;">
+                <input type="hidden" name="user_id" value="{item.id}">
+                <button type="submit" class="btn btn-sm {item.enabled_btn_class}">{item.enabled_btn_text}</button>
+              </form>
+            </td>
+            <td>
+              <select class="form-select form-select-sm role-select" data-user-id="{item.id}" data-current-role="{item.role_id}" aria-label="Seleccionar rol de usuario"></select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-primary edit-user-btn" data-user-id="{item.id}" data-username="{item.username}" data-email="{item.email}">Editar</button>
+            </td>
+          </tr>
+          <!-- endloop -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Modal de edición de usuario -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editUserModalLabel">Editar Usuario</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editUserForm">
+            <input type="hidden" id="editUserId" name="user_id">
+            <div class="mb-3">
+              <label for="editUsername" class="form-label">Username</label>
+              <input type="text" class="form-control" id="editUsername" name="username" required>
+            </div>
+            <div class="mb-3">
+              <label for="editEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="editEmail" name="email" required>
+            </div>
+            <div id="editUserError" class="text-danger mt-2" style="display:none;"></div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="editUserConfirmBtn">Guardar Cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de reautenticación -->
+  <div class="modal fade" id="reauthModal" tabindex="-1" aria-labelledby="reauthModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="reauthModalLabel">Confirmar acción sensible</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <p>Por seguridad, ingresa tu contraseña para continuar.</p>
+          <input type="password" class="form-control" id="reauthPassword" placeholder="Contraseña" autocomplete="current-password">
+          <div id="reauthError" class="text-danger mt-2" style="display:none;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="reauthConfirmBtn">Confirmar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Variables para edición de usuario
+    let editUserId = null;
+    let editUserUsername = null;
+    let editUserEmail = null;
+
+    // Función para mostrar modal de edición
+    function showEditUserModal(userId, username, email) {
+      editUserId = userId;
+      editUserUsername = username;
+      editUserEmail = email;
+      document.getElementById('editUserId').value = userId;
+      document.getElementById('editUsername').value = username;
+      document.getElementById('editEmail').value = email;
+      document.getElementById('editUserError').style.display = 'none';
+      const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+      modal.show();
+    }
+
+    // Reautenticación para acciones sensibles
+    let reauthAction = null;
+    let reauthUserId = null;
+    let reauthRoleId = null;
+    let reauthTarget = null;
+    function showReauthModal(action, userId, roleId, target) {
+      reauthAction = action;
+      reauthUserId = userId;
+      reauthRoleId = roleId || null;
+      reauthTarget = target || null;
+      document.getElementById('reauthPassword').value = '';
+      document.getElementById('reauthError').style.display = 'none';
+      const modal = new bootstrap.Modal(document.getElementById('reauthModal'));
+      modal.show();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // Interceptar botones de edición de usuario
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-user-btn')) {
+          const userId = e.target.getAttribute('data-user-id');
+          const username = e.target.getAttribute('data-username');
+          const email = e.target.getAttribute('data-email');
+          showEditUserModal(userId, username, email);
+        }
+      });
+
+      // Confirmar edición de usuario
+      document.getElementById('editUserConfirmBtn').addEventListener('click', function() {
+        const userId = document.getElementById('editUserId').value;
+        const username = document.getElementById('editUsername').value;
+        const email = document.getElementById('editEmail').value;
+        const errorDiv = document.getElementById('editUserError');
+
+        if (!username || !email) {
+          errorDiv.textContent = 'Todos los campos son obligatorios.';
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        fetch('/admin/update_user', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+          body: 'user_id=' + encodeURIComponent(userId) + '&username=' + encodeURIComponent(username) + '&email=' + encodeURIComponent(email)
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+            modal.hide();
+            location.reload(); // Recargar la página para ver cambios
+          } else {
+            errorDiv.textContent = data.msg || 'Error al actualizar usuario';
+            errorDiv.style.display = 'block';
+          }
+        });
+      });
+
+      // Interceptar deshabilitar usuario
+      document.querySelector('tbody').addEventListener('submit', function(e) {
+        if (e.target.matches('form[action="/admin/disable_user"]')) {
+          e.preventDefault();
+          const userId = e.target.querySelector('input[name="user_id"]').value;
+          showReauthModal('disable', userId, null, e.target);
+        }
+      });
+
+      // Interceptar cambio de rol
+      document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('role-select')) {
+          const userId = e.target.getAttribute('data-user-id');
+          const prevValue = e.target.getAttribute('data-current-role');
+          const roleId = e.target.value;
+          e.target.value = prevValue;
+          showReauthModal('role', userId, roleId, e.target);
+          e.target.setAttribute('data-prev-value', prevValue);
+        }
+      });
+
+      // Si se cancela el modal, NO cambiar el valor visual ni en la DB
+      document.getElementById('reauthModal').addEventListener('hidden.bs.modal', function() {
+        if (reauthAction === 'role' && reauthTarget) {
+          reauthTarget.value = reauthTarget.getAttribute('data-prev-value');
+        }
+        reauthAction = null;
+        reauthUserId = null;
+        reauthRoleId = null;
+        reauthTarget = null;
+      });
+
+      // Confirmar en el modal
+      document.getElementById('reauthConfirmBtn').addEventListener('click', function() {
+        const password = document.getElementById('reauthPassword').value;
+        if (!password) return;
+        fetch('/reauthenticate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+          body: 'password=' + encodeURIComponent(password)
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('reauthModal'));
+            modal.hide();
+            if (reauthAction === 'disable' && reauthTarget) {
+              fetch('/admin/disable_user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+                body: 'user_id=' + encodeURIComponent(reauthUserId)
+              }).then(() => location.reload());
+            } else if (reauthAction === 'role' && reauthTarget) {
+              fetch('/admin/set_role', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+                body: 'user_id=' + encodeURIComponent(reauthUserId) + '&role_id=' + encodeURIComponent(reauthRoleId)
+              }).then(() => location.reload());
+            }
+          } else {
+            document.getElementById('reauthError').textContent = data.msg || 'Contraseña incorrecta';
+            document.getElementById('reauthError').style.display = 'block';
+          }
+        });
+      });
+
+      // Función para actualizar la tabla
+      function updateTable(users) {
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = '';
+        users.forEach(user => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.username}</td>
+            <td>${user.email}</td>
+            <td>
+              <form method="POST" action="/admin/disable_user" style="display:inline;">
+                <input type="hidden" name="user_id" value="${user.id}">
+                <button type="submit" class="btn btn-sm ${user.enabled_btn_class}">${user.enabled_btn_text}</button>
+              </form>
+            </td>
+            <td>
+              <select class="form-select form-select-sm role-select" data-user-id="${user.id}" data-current-role="${user.role_id}"></select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-primary edit-user-btn" data-user-id="${user.id}" data-username="${user.username}" data-email="${user.email}">Editar</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+        // Recargar roles para los selects
+        fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+          .then(r => r.json())
+          .then(roles => {
+            document.querySelectorAll('.role-select').forEach(function(select) {
+              const currentRole = select.getAttribute('data-current-role');
+              select.innerHTML = '';
+              roles.forEach(function(role) {
+                const option = document.createElement('option');
+                option.value = role.id;
+                option.textContent = role.name;
+                if (String(role.id) === String(currentRole)) option.selected = true;
+                select.appendChild(option);
+              });
+            });
+          });
+      }
+
+      // Función para realizar búsqueda
+      function performSearch(username) {
+        fetch('/admin/search_user', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+          body: 'username=' + encodeURIComponent(username)
+        })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            updateTable(data.users);
+          }
+        });
+      }
+
+      // Manejar submit del formulario
+      document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const q = document.querySelector('input[name="q"]').value;
+        performSearch(q);
+      });
+
+      // Manejar botón Actualizar
+      document.getElementById('loadAllBtn').addEventListener('click', function() {
+        performSearch('');
+      });
+
+      // Cargar roles iniciales para los selects
+      fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+        .then(r => r.json())
+        .then(roles => {
+          document.querySelectorAll('.role-select').forEach(function(select) {
+            const currentRole = select.getAttribute('data-current-role');
+            select.innerHTML = '';
+            roles.forEach(function(role) {
+              const option = document.createElement('option');
+              option.value = role.id;
+              option.textContent = role.name;
+              if (String(role.id) === String(currentRole)) option.selected = true;
+              select.appendChild(option);
+            });
+          });
+        });
+    });
+  </script>
+</body>
+</html>

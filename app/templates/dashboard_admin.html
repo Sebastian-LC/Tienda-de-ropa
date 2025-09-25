@@ -9,6 +9,93 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const searchBtn = document.getElementById('search-user-btn');
+  const clearBtn = document.getElementById('clear-search-btn');
+  const searchInput = document.getElementById('search-username');
+  const resultsDiv = document.getElementById('search-results');
+  const resultsBody = document.getElementById('search-results-body');
+  const noResults = document.getElementById('search-no-results');
+
+  // Buscar usuarios
+  searchBtn.addEventListener('click', function() {
+    const username = searchInput.value.trim();
+    if (!username) return;
+
+    fetch('/admin/search_user', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+      body: 'username=' + encodeURIComponent(username)
+    })
+    .then(r => r.json())
+    .then(data => {
+      resultsBody.innerHTML = "";
+      if (data.ok && data.users.length > 0) {
+        noResults.classList.add('d-none');
+        resultsDiv.classList.remove('d-none');
+
+        data.users.forEach(user => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.username}</td>
+            <td>${user.email}</td>
+            <td>
+              <form method="POST" action="/admin/disable_user" style="display:inline;">
+                <input type="hidden" name="user_id" value="${user.id}">
+                <button type="submit" class="btn btn-sm ${user.enabled_btn_class}">${user.enabled_btn_text}</button>
+              </form>
+            </td>
+            <td>
+              <select class="form-select form-select-sm role-select"
+                data-user-id="${user.id}" data-current-role="${user.role_id || ''}">
+              </select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-primary edit-user-btn"
+                data-user-id="${user.id}" data-username="${user.username}" data-email="${user.email}">
+                Editar
+              </button>
+            </td>
+          `;
+          resultsBody.appendChild(tr);
+        });
+
+        // Recargar roles en selects
+        fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+          .then(r => r.json())
+          .then(roles => {
+            document.querySelectorAll('#search-results-body .role-select').forEach(select => {
+              const currentRole = select.getAttribute('data-current-role');
+              select.innerHTML = '';
+              roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id;
+                option.textContent = role.name;
+                if (String(role.id) === String(currentRole)) option.selected = true;
+                select.appendChild(option);
+              });
+            });
+          });
+
+      } else {
+        resultsDiv.classList.remove('d-none');
+        noResults.classList.remove('d-none');
+      }
+    });
+  });
+
+  // Limpiar búsqueda
+  clearBtn.addEventListener('click', function() {
+    searchInput.value = "";
+    resultsBody.innerHTML = "";
+    resultsDiv.classList.add('d-none');
+    noResults.classList.add('d-none');
+  });
+});
+</script>
+
 <body>
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg">
@@ -22,6 +109,7 @@
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#busqueda">Búsqueda <i class="fa fa-search"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#catalogo">Gestión de Catálogo <i class="fa fa-cogs"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#informes">Informes <i class="fa fa-chart-bar"></i></a></li>
         </ul>
@@ -34,7 +122,10 @@
     <!-- Gestión de Usuarios -->
     <section id="usuarios" class="p-3 rounded mb-3">
   <h2 class="text-primary">Gestión de Usuarios</h2>
-  <button id="refresh-users" class="btn btn-sm btn-outline-primary mb-2" type="button">Actualizar</button>
+  <div class="mb-2">
+    <button id="refresh-users" class="btn btn-sm btn-outline-primary" type="button">Actualizar</button>
+    <button id="create-user-btn" class="btn btn-sm btn-success" type="button">Crear Usuario</button>
+  </div>
   <table class="table table-bordered table-hover text-center align-middle">
         <thead class="table-light">
           <tr>
@@ -43,6 +134,7 @@
             <th>Email</th>
             <th>Estado/Acción</th>
             <th>Rol</th>
+            <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -54,19 +146,58 @@
             <td>
               <form method="POST" action="/admin/disable_user" style="display:inline;">
                 <input type="hidden" name="user_id" value="{item.id}">
-                <button type="submit" class="btn btn-sm {item.enabled_btn_class}">
-                  {item.enabled_btn_text} ({item.enabled})
-                </button>
+                <button type="submit" class="btn btn-sm {item.enabled_btn_class}">{item.enabled_btn_text}</button>
               </form>
             </td>
             <td>
               <select class="form-select form-select-sm role-select" data-user-id="{item.id}" data-current-role="{item.role_id}" aria-label="Seleccionar rol de usuario"></select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-primary edit-user-btn" data-user-id="{item.id}" data-username="{item.username}" data-email="{item.email}">Editar</button>
             </td>
           </tr>
           <!-- endloop -->
         </tbody>
       </table>
     </section>
+
+    <!-- Búsqueda de Usuarios -->
+    <section id="busqueda" class="p-3 rounded mb-3">
+      <h2 class="text-info">Búsqueda de Usuarios</h2>
+      <div class="mb-3">
+        <div class="input-group">
+          <input type="text" id="search-username" class="form-control" placeholder="Ingrese nombre de usuario a buscar..." aria-label="Nombre de usuario">
+          <button id="search-user-btn" class="btn btn-info" type="button">
+            <i class="fas fa-search"></i> Buscar
+          </button>
+          <button id="clear-search-btn" class="btn btn-secondary" type="button">
+            <i class="fas fa-times"></i> Limpiar
+          </button>
+        </div>
+      </div>
+      <div id="search-results" class="d-none">
+        <h5>Resultados de búsqueda:</h5>
+        <table class="table table-bordered table-hover text-center align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Email</th>
+              <th>Estado/Acción</th>
+              <th>Rol</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="search-results-body">
+            <!-- Los resultados se cargarán aquí dinámicamente -->
+          </tbody>
+        </table>
+        <div id="search-no-results" class="alert alert-info d-none">
+          No se encontraron usuarios con ese nombre de usuario.
+        </div>
+      </div>
+    </section>
+
     <!-- Gestión del Catálogo -->
     <section id="catalogo" class="p-3 rounded mb-3">
       <h2 class="text-warning">Gestión del Catálogo</h2>
@@ -184,7 +315,44 @@
         }
         // Cargar roles al inicio
         loadRolesAndPopulate();
-        // ...eliminar listener directo de cambio de rol, solo usar la lógica del modal...
+
+        // Función para actualizar la tabla de usuarios
+        function refreshUsersTable() {
+          fetch('/admin/users', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(r => r.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const doc = parser.parseFromString(html, 'text/html');
+              const newTbody = doc.querySelector('#usuarios tbody');
+              const oldTbody = document.querySelector('#usuarios tbody');
+              if (newTbody && oldTbody) {
+                oldTbody.innerHTML = newTbody.innerHTML;
+              }
+              // Recargar roles después de actualizar la tabla
+              fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+                .then(r => r.json())
+                .then(roles => {
+                  document.querySelectorAll('.role-select').forEach(function(select) {
+                    const currentRole = select.getAttribute('data-current-role');
+                    select.innerHTML = '';
+                    roles.forEach(function(role) {
+                      const option = document.createElement('option');
+                      option.value = role.id;
+                      option.textContent = role.name;
+                      if (String(role.id) === String(currentRole)) option.selected = true;
+                      select.appendChild(option);
+                    });
+                  });
+                });
+            });
+        }
+
+        // Actualizar tabla inmediatamente al cargar la página
+        refreshUsersTable();
+
+        // Auto-refresh de la tabla de usuarios cada 10 segundos (antes era cada 2 segundos)
+        // setInterval(refreshUsersTable, 10000);
+
         // Alerta de expiración de sesión
         let sessionTimeout = 10 * 60; // 10 minutos en segundos
         let warningShown = false;
@@ -199,6 +367,7 @@
             setTimeout(() => div.remove(), 120000); // Quitar mensaje tras 2 minutos
           }
         }
+
         setInterval(function() {
           sessionTimeout -= 1;
           if (sessionTimeout === 120 && !warningShown) {
@@ -210,6 +379,73 @@
       </script>
     </section>
   </main>
+
+  <!-- Modal de edición de usuario -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editUserModalLabel">Editar Usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editUserForm">
+          <input type="hidden" id="editUserId" name="user_id">
+          <div class="mb-3">
+            <label for="editUsername" class="form-label">Username</label>
+            <input type="text" class="form-control" id="editUsername" name="username" required>
+          </div>
+          <div class="mb-3">
+            <label for="editEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="editEmail" name="email" required>
+          </div>
+          <div id="editUserError" class="text-danger mt-2" style="display:none;"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="editUserConfirmBtn">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- Modal de creación de usuario -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createUserModalLabel">Crear Usuario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createUserForm">
+          <div class="mb-3">
+            <label for="createUsername" class="form-label">Username</label>
+            <input type="text" class="form-control" id="createUsername" name="username" required>
+          </div>
+          <div class="mb-3">
+            <label for="createEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="createEmail" name="email" required>
+          </div>
+          <div class="mb-3">
+            <label for="createPassword" class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="createPassword" name="password" required>
+          </div>
+          <div class="mb-3">
+            <label for="createConfirmPassword" class="form-label">Confirmar Contraseña</label>
+            <input type="password" class="form-control" id="createConfirmPassword" name="confirm_password" required>
+          </div>
+          <div id="createUserError" class="text-danger mt-2" style="display:none;"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" id="createUserConfirmBtn">Crear Usuario</button>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- Modal de reautenticación -->
 <div class="modal fade" id="reauthModal" tabindex="-1" aria-labelledby="reauthModalLabel" aria-hidden="true">
@@ -233,6 +469,24 @@
 </div>
 
   <script>
+// Variables para edición de usuario
+let editUserId = null;
+let editUserUsername = null;
+let editUserEmail = null;
+
+// Función para mostrar modal de edición
+function showEditUserModal(userId, username, email) {
+  editUserId = userId;
+  editUserUsername = username;
+  editUserEmail = email;
+  document.getElementById('editUserId').value = userId;
+  document.getElementById('editUsername').value = username;
+  document.getElementById('editEmail').value = email;
+  document.getElementById('editUserError').style.display = 'none';
+  const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+  modal.show();
+}
+
 // Reautenticación para acciones sensibles
 let reauthAction = null;
 let reauthUserId = null;
@@ -249,6 +503,156 @@ function showReauthModal(action, userId, roleId, target) {
   modal.show();
 }
 document.addEventListener('DOMContentLoaded', function() {
+  // Interceptar botones de edición de usuario
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('edit-user-btn')) {
+      const userId = e.target.getAttribute('data-user-id');
+      const username = e.target.getAttribute('data-username');
+      const email = e.target.getAttribute('data-email');
+      showEditUserModal(userId, username, email);
+    } else if (e.target.id === 'create-user-btn') {
+      showCreateUserModal();
+    }
+  });
+
+  // Función para mostrar modal de creación
+  function showCreateUserModal() {
+    document.getElementById('createUsername').value = '';
+    document.getElementById('createEmail').value = '';
+    document.getElementById('createPassword').value = '';
+    document.getElementById('createConfirmPassword').value = '';
+    document.getElementById('createUserError').style.display = 'none';
+    const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
+    modal.show();
+  }
+
+  // Confirmar creación de usuario
+  document.getElementById('createUserConfirmBtn').addEventListener('click', function() {
+    const username = document.getElementById('createUsername').value;
+    const email = document.getElementById('createEmail').value;
+    const password = document.getElementById('createPassword').value;
+    const confirmPassword = document.getElementById('createConfirmPassword').value;
+    const errorDiv = document.getElementById('createUserError');
+
+    if (!username || !email || !password || !confirmPassword) {
+      errorDiv.textContent = 'Todos los campos son obligatorios.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      errorDiv.textContent = 'Las contraseñas no coinciden.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    fetch('/admin/create_user', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+      body: 'username=' + encodeURIComponent(username) + '&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(password)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
+        modal.hide();
+        // Actualizar la tabla directamente como lo hace el botón de actualizar
+        fetch('/admin/users', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+          .then(r => r.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTbody = doc.querySelector('#usuarios tbody');
+            const oldTbody = document.querySelector('#usuarios tbody');
+            if (newTbody && oldTbody) {
+              oldTbody.innerHTML = newTbody.innerHTML;
+            } else {
+              oldTbody.innerHTML = html;
+            }
+            // Recargar roles después de actualizar la tabla
+            fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+              .then(r => r.json())
+              .then(roles => {
+                document.querySelectorAll('.role-select').forEach(function(select) {
+                  const currentRole = select.getAttribute('data-current-role');
+                  select.innerHTML = '';
+                  roles.forEach(function(role) {
+                    const option = document.createElement('option');
+                    option.value = role.id;
+                    option.textContent = role.name;
+                    if (String(role.id) === String(currentRole)) option.selected = true;
+                    select.appendChild(option);
+                  });
+                });
+              });
+          });
+      } else {
+        errorDiv.textContent = data.msg || 'Error al crear usuario';
+        errorDiv.style.display = 'block';
+      }
+    });
+  });
+
+  // Confirmar edición de usuario
+  document.getElementById('editUserConfirmBtn').addEventListener('click', function() {
+    const userId = document.getElementById('editUserId').value;
+    const username = document.getElementById('editUsername').value;
+    const email = document.getElementById('editEmail').value;
+    const errorDiv = document.getElementById('editUserError');
+
+    if (!username || !email) {
+      errorDiv.textContent = 'Todos los campos son obligatorios.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+
+    fetch('/admin/update_user', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+      body: 'user_id=' + encodeURIComponent(userId) + '&username=' + encodeURIComponent(username) + '&email=' + encodeURIComponent(email)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+        modal.hide();
+        // Actualizar la tabla directamente como lo hace el botón de actualizar
+        fetch('/admin/users', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+          .then(r => r.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTbody = doc.querySelector('#usuarios tbody');
+            const oldTbody = document.querySelector('#usuarios tbody');
+            if (newTbody && oldTbody) {
+              oldTbody.innerHTML = newTbody.innerHTML;
+            } else {
+              oldTbody.innerHTML = html;
+            }
+            // Recargar roles después de actualizar la tabla
+            fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+              .then(r => r.json())
+              .then(roles => {
+                document.querySelectorAll('.role-select').forEach(function(select) {
+                  const currentRole = select.getAttribute('data-current-role');
+                  select.innerHTML = '';
+                  roles.forEach(function(role) {
+                    const option = document.createElement('option');
+                    option.value = role.id;
+                    option.textContent = role.name;
+                    if (String(role.id) === String(currentRole)) option.selected = true;
+                    select.appendChild(option);
+                  });
+                });
+              });
+          });
+      } else {
+        errorDiv.textContent = data.msg || 'Error al actualizar usuario';
+        errorDiv.style.display = 'block';
+      }
+    });
+  });
+
   // Interceptar deshabilitar usuario
   document.querySelector('#usuarios').addEventListener('submit', function(e) {
     if (e.target.matches('form[action="/admin/disable_user"]')) {
@@ -317,6 +721,99 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('reauthError').style.display = 'block';
       }
     });
+  });
+
+  // Funcionalidad de búsqueda de usuarios
+  document.getElementById('search-user-btn').addEventListener('click', function() {
+    const username = document.getElementById('search-username').value.trim();
+    const resultsDiv = document.getElementById('search-results');
+    const resultsBody = document.getElementById('search-results-body');
+    const noResultsDiv = document.getElementById('search-no-results');
+
+    if (!username) {
+      alert('Por favor ingrese un nombre de usuario para buscar.');
+      return;
+    }
+
+    // Mostrar loading
+    resultsBody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Buscando...</td></tr>';
+    resultsDiv.classList.remove('d-none');
+    noResultsDiv.classList.add('d-none');
+
+    fetch('/admin/search_user', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest'},
+      credentials: 'same-origin',
+      body: 'username=' + encodeURIComponent(username)
+    })
+    .then(r => r.json())
+    .then(data => {
+      resultsBody.innerHTML = '';
+
+      if (data.ok && data.users && data.users.length > 0) {
+        console.log('Datos recibidos del servidor:', data.users); // Debug
+        data.users.forEach(function(user) {
+          console.log('Procesando usuario:', user); // Debug
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${user.id}</td>
+            <td>${user.username}</td>
+            <td>${user.email}</td>
+            <td>
+              <form method="POST" action="/admin/disable_user" style="display:inline;">
+                <input type="hidden" name="user_id" value="${user.id}">
+                <button type="submit" class="btn btn-sm ${user.enabled_btn_class}">${user.enabled_btn_text}</button>
+              </form>
+            </td>
+            <td>
+              <select class="form-select form-select-sm role-select" data-user-id="${user.id}" data-current-role="${user.role_id}" aria-label="Seleccionar rol de usuario"></select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-primary edit-user-btn" data-user-id="${user.id}" data-username="${user.username}" data-email="${user.email}">Editar</button>
+            </td>
+          `;
+          resultsBody.appendChild(row);
+        });
+
+        // Cargar roles para los selects de búsqueda
+        fetch('/admin/roles', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+          .then(r => r.json())
+          .then(roles => {
+            resultsBody.querySelectorAll('.role-select').forEach(function(select) {
+              const currentRole = select.getAttribute('data-current-role');
+              select.innerHTML = '';
+              roles.forEach(function(role) {
+                const option = document.createElement('option');
+                option.value = role.id;
+                option.textContent = role.name;
+                if (String(role.id) === String(currentRole)) option.selected = true;
+                select.appendChild(option);
+              });
+            });
+          });
+      } else {
+        resultsBody.innerHTML = '';
+        noResultsDiv.classList.remove('d-none');
+      }
+    })
+    .catch(error => {
+      console.error('Error en búsqueda:', error);
+      resultsBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error al realizar la búsqueda. Intente nuevamente.</td></tr>';
+    });
+  });
+
+  // Funcionalidad de limpiar búsqueda
+  document.getElementById('clear-search-btn').addEventListener('click', function() {
+    document.getElementById('search-username').value = '';
+    document.getElementById('search-results').classList.add('d-none');
+    document.getElementById('search-no-results').classList.add('d-none');
+  });
+
+  // Permitir búsqueda con Enter
+  document.getElementById('search-username').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      document.getElementById('search-user-btn').click();
+    }
   });
 });
   </script>

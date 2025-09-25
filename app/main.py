@@ -32,17 +32,20 @@ def render_template(name, **ctx):
 
     # Handle loops
     loop_regex = re.compile(r"<!-- loop (\w+) -->(.*?)<!-- endloop -->", re.DOTALL)
-    
+
     def handle_loop(match):
         list_name = match.group(1)
         loop_template = match.group(2)
         items = ctx.get(list_name, [])
-        
+
+        print(f"DEBUG TEMPLATE: Procesando loop '{list_name}' con {len(items)} items")
+
         rendered_loop = ""
         if not items:
             return "<tr><td colspan='99' class='text-center'>No hay datos.</td></tr>"
 
-        for item in items:
+        for i, item in enumerate(items):
+            print(f"DEBUG TEMPLATE: Item {i} - {item}")
             item_html = loop_template
             for key, value in item.items():
                 item_html = item_html.replace(f"{{item.{key}}}", str(value))
@@ -56,6 +59,14 @@ def render_template(name, **ctx):
         if isinstance(data, dict):
             for sub_key, sub_value in data.items():
                 content = content.replace(f"{{{key}.{sub_key}}}", str(sub_value))
+
+    # Handle item.field format for loops
+    for key, data in ctx.items():
+        if isinstance(data, list):
+            for item in data:
+                if isinstance(item, dict):
+                    for field, value in item.items():
+                        content = content.replace(f"{{item.{field}}}", str(value))
 
     # Handle simple variables like {message}
     for key, value in ctx.items():
@@ -119,12 +130,14 @@ class Handler(BaseHTTPRequestHandler):
                 template_name = "dashboard_user.html"
             
             self.respond(200, render_template(template_name, user=user, orders=orders))
+        
         elif self.path == "/admin/users":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
             if not ok or "admin" not in session_data.get("roles", []):
                 self.redirect("/")
                 return
+            user = auth.get_user_by_id(session_data["user_id"])
             db = sqlite3.connect(settings.DB_PATH)
             try:
                 cur = db.cursor()
@@ -132,14 +145,18 @@ class Handler(BaseHTTPRequestHandler):
                 users = []
                 for row in cur.fetchall():
                     enabled = row[3]
-                    enabled_str = "success" if enabled else "secondary"
-                    enabled_label = "Habilitado" if enabled else "Deshabilitado"
-                    btn_text = "Deshabilitar" if enabled == 1 else "Habilitar"
-                    btn_class = "btn-danger" if enabled == 1 else "btn-success"
+                    enabled_str = "danger" if enabled else "secondary"
+                    enabled_label = "Deshabilitado" if enabled else "Habilitado"
+                    btn_text = "Habilitado" if enabled == 1 else "Deshabilitado"
+                    btn_class = "btn-success" if enabled == 1 else "btn-secondary"
+                    # Reversed colors for buttons
+                    disabled_btn_class = "btn-secondary" if enabled == 1 else "btn-success"
+                    disabled_btn_text = "Deshabilitado" if enabled == 1 else "Habilitado"
+                    disabled = "Habilitado" if enabled else "Deshabilitado"
                     # Obtener el rol actual
                     from . import auth as authmod
                     role_id = authmod.get_user_role_id(row[0])
-                    users.append({
+                    user_data = {
                         "id": row[0],
                         "username": row[1],
                         "email": row[2],
@@ -147,8 +164,13 @@ class Handler(BaseHTTPRequestHandler):
                         "enabled_class": enabled_str,
                         "enabled_btn_text": btn_text,
                         "enabled_btn_class": btn_class,
+                        "disabled_btn_class": disabled_btn_class,
+                        "disabled_btn_text": disabled_btn_text,
+                        "disabled": disabled,
                         "role_id": role_id
-                    })
+                    }
+                    print(f"DEBUG: Usuario procesado - ID: {user_data['id']}, Username: '{user_data['username']}', Email: '{user_data['email']}'")
+                    users.append(user_data)
             finally:
                 db.close()
             # Si es AJAX, solo devolver el <tbody> de la tabla de usuarios
@@ -172,8 +194,54 @@ class Handler(BaseHTTPRequestHandler):
                     self.respond(200, rendered)
                     return
             # Si no es AJAX, renderizar la página completa
-            html = render_template("dashboard_admin.html", user=session_data, users=users)
+            html = render_template("dashboard_admin.html", user=user, users=users)
+
             self.respond(200, html)
+        elif self.path.startswith("/admin/search_user"):
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.redirect("/")
+                return
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(self.path)
+            query_params = parse_qs(parsed.query)
+            q = query_params.get('q', [''])[0].strip()
+            users = []
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                if q:
+                    cur.execute("SELECT id, username, email, enabled FROM users WHERE username LIKE ?", (f"%{q}%",))
+                else:
+                    # Si q vacío, cargar todos los usuarios
+                    cur.execute("SELECT id, username, email, enabled FROM users")
+                for row in cur.fetchall():
+                    enabled = row[3]
+                    enabled_str = "danger" if enabled else "secondary"
+                    enabled_label = "Deshabilitado" if enabled else "Habilitado"
+                    btn_text = "Habilitado" if enabled == 1 else "Deshabilitado"
+                    btn_class = "btn-success" if enabled == 1 else "btn-secondary"
+                    disabled_btn_class = "btn-secondary" if enabled == 1 else "btn-success"
+                    disabled_btn_text = "Deshabilitado" if enabled == 1 else "Habilitado"
+                    disabled = "Habilitado" if enabled else "Deshabilitado"
+                    role_id = auth.get_user_role_id(row[0])
+                    users.append({
+                        "id": row[0],
+                        "username": row[1],
+                        "email": row[2],
+                        "enabled": enabled_label,
+                        "enabled_class": enabled_str,
+                        "enabled_btn_text": btn_text,
+                        "enabled_btn_class": btn_class,
+                        "disabled_btn_class": disabled_btn_class,
+                        "disabled_btn_text": disabled_btn_text,
+                        "disabled": disabled,
+                        "role_id": role_id
+                    })
+            finally:
+                db.close()
+
         elif self.path == "/admin/roles":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
@@ -190,6 +258,7 @@ class Handler(BaseHTTPRequestHandler):
                 db.close()
             self.respond(200, json.dumps(roles_list), content_type="application/json")
             return
+
         elif self.path == "/logout":
             session = self.get_session()
             auth.logout(session)
@@ -226,7 +295,7 @@ class Handler(BaseHTTPRequestHandler):
             return
 
         if self.path == "/forms":
-            username = params.get("username", [""])[0]   # ✅ usar 'username'
+            username = params.get("username", [""])[0]   #usar 'username'
             email = params.get("email", [""])[0]
             password = params.get("password", [""])[0]
             ok, msg = auth.create_user(username, email, password)
@@ -267,10 +336,13 @@ class Handler(BaseHTTPRequestHandler):
             if not ok or "admin" not in session_data.get("roles", []):
                 self.redirect("/")
                 return
-            user_id = int(params.get("user_id", [0])[0])
+            raw_user_id = params.get("user_id", ["0"])[0]
+            # Limpiar user_id para que solo contenga dígitos
+            user_id_str = ''.join(filter(str.isdigit, raw_user_id))
+            user_id = int(user_id_str)
             # No permitir que el admin se deshabilite a sí mismo
             if user_id == session_data["user_id"]:
-                self.respond(400, b"No puedes deshabilitar tu propio usuario.")
+                self.respond(400, "No puedes deshabilitar tu propio usuario.")
                 return
             db = sqlite3.connect(settings.DB_PATH)
             try:
@@ -297,19 +369,107 @@ class Handler(BaseHTTPRequestHandler):
             if not ok or "admin" not in session_data.get("roles", []):
                 self.respond(403, "No autorizado")
                 return
-            user_id = int(params.get("user_id", [0])[0])
-            role_id = int(params.get("role_id", [0])[0])
+            raw_user_id = params.get("user_id", ["0"])[0]
+            raw_role_id = params.get("role_id", ["0"])[0]
+            # Limpiar user_id y role_id para que solo contengan dígitos
+            user_id_str = ''.join(filter(str.isdigit, raw_user_id))
+            role_id_str = ''.join(filter(str.isdigit, raw_role_id))
+            if not user_id_str or not role_id_str:
+                self.respond(400, "ID de usuario o rol inválido")
+                return
+            user_id = int(user_id_str)
+            role_id = int(role_id_str)
             db = sqlite3.connect(settings.DB_PATH)
             try:
                 cur = db.cursor()
                 # Eliminar roles actuales
                 cur.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
                 # Asignar nuevo rol
-                cur.execute("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?) ", (user_id, role_id))
+                cur.execute("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", (user_id, role_id))
                 db.commit()
             finally:
                 db.close()
             self.respond(200, b"ok", content_type="text/plain")
+            return
+        elif self.path == "/admin/create_user":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                return
+            username = params.get("username", [""])[0]
+            email = params.get("email", [""])[0]
+            password = params.get("password", [""])[0]
+            from . import users
+            ok, msg = users.create_user(username, email, password)
+            if ok:
+                self.respond(200, json.dumps({"ok": True}), content_type="application/json")
+            else:
+                self.respond(400, json.dumps({"ok": False, "msg": msg}), content_type="application/json")
+            return
+        elif self.path == "/admin/update_user":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                return
+            user_id = int(params.get("user_id", [0])[0])
+            new_username = params.get("username", [""])[0]
+            new_email = params.get("email", [""])[0]
+            from . import users
+            ok, msg = users.update_user(session_data["user_id"], user_id, new_username, new_email)
+            if ok:
+                self.respond(200, json.dumps({"ok": True}), content_type="application/json")
+            else:
+                self.respond(400, json.dumps({"ok": False, "msg": msg}), content_type="application/json")
+            return
+        elif self.path == "/admin/search_user":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "admin" not in session_data.get("roles", []):
+                self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                return
+            username = params.get("username", [""])[0]
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                if username:
+                    cur.execute("SELECT id, username, email, enabled FROM users WHERE username LIKE ?", (f"%{username}%",))
+                else:
+                    # Si username vacío, cargar todos los usuarios
+                users = []
+                for row in cur.fetchall():
+                    print(f"DEBUG SEARCH_USER: Usuario encontrado - ID: {row[0]}, Username: '{row[1]}', Email: '{row[2]}', Enabled: {row[3]}")
+                    enabled = row[3]
+                    enabled_str = "danger" if enabled else "secondary"
+                    enabled_label = "Deshabilitado" if enabled else "Habilitado"
+                    btn_text = "Habilitado" if enabled == 1 else "Deshabilitado"
+                    btn_class = "btn-success" if enabled == 1 else "btn-secondary"
+                    # Reversed colors for buttons
+                    disabled_btn_class = "btn-secondary" if enabled == 1 else "btn-success"
+                    disabled_btn_text = "Deshabilitado" if enabled == 1 else "Habilitado"
+                    disabled = "Habilitado" if enabled else "Deshabilitado"
+                    # Obtener el rol actual
+                    from . import auth as authmod
+                    role_id = authmod.get_user_role_id(row[0])
+                    user_data = {
+                        "id": row[0],
+                        "username": row[1],
+                        "email": row[2],
+                        "enabled": enabled_label,
+                        "enabled_class": enabled_str,
+                        "enabled_btn_text": btn_text,
+                        "enabled_btn_class": btn_class,
+                        "disabled_btn_class": disabled_btn_class,
+                        "disabled_btn_text": disabled_btn_text,
+                        "disabled": disabled,
+                        "role_id": role_id
+                    }
+                    users.append(user_data)
+                print(f"DEBUG SEARCH_USER: Usuarios a enviar: {users}")
+            finally:
+                db.close()
+            self.respond(200, json.dumps({"ok": True, "users": users}), content_type="application/json")
             return
         else:
             self.respond(404, "Not Found")
@@ -364,6 +524,7 @@ def run():
         print("Stopping server")
     finally:
         httpd.server_close()
+
 
 
 if __name__ == "__main__":
