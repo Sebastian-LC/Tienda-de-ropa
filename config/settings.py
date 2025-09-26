@@ -15,8 +15,9 @@ PORT = 8080
 HTTPS_PORT = 4443  # reservado para cuando uses HTTPS
 
 # Desactivar certificados (solo HTTP en pruebas)
-CERTFILE = None
-KEYFILE = None
+CERTFILE = os.path.join(BASE_DIR, "certs", "server.crt")
+KEYFILE = os.path.join(BASE_DIR, "certs", "server.key")
+
 
 # Seguridad básica
 SESSION_TIMEOUT = 300
