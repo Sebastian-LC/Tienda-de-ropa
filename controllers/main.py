@@ -6,7 +6,7 @@ if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, unquote
 import json
 import sqlite3
 import re
@@ -17,7 +17,7 @@ from config import settings
 from . import auth, maintenance, security
 from .audit import log_db_action
 
-TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
+TEMPLATES_DIR = os.path.join(ROOT_DIR, "views")
 
 def render_template(name, **ctx):
     """Renderiza una plantilla HTML con variables y loops simples."""
@@ -82,8 +82,8 @@ class Handler(BaseHTTPRequestHandler):
         """Maneja las peticiones GET: rutas, estáticos, dashboards, AJAX."""
         # Servir archivos estáticos
         if self.path.startswith("/static/"):
-            static_path = self.path.lstrip("/")
-            static_file = os.path.join(os.path.dirname(__file__), static_path)
+            static_path = unquote(self.path.lstrip("/"))
+            static_file = os.path.join(ROOT_DIR, static_path)
             if os.path.isfile(static_file):
                 # Determinar el tipo de contenido
                 if static_file.endswith('.css'):
@@ -420,6 +420,10 @@ class Handler(BaseHTTPRequestHandler):
                 return
             user_id = int(user_id_str)
             role_id = int(role_id_str)
+            # No permitir que el admin cambie su propio rol
+            if user_id == session_data["user_id"]:
+                self.respond(400, "No puedes cambiar tu propio rol.")
+                return
             db = sqlite3.connect(settings.DB_PATH)
             try:
                 cur = db.cursor()
@@ -552,8 +556,8 @@ def run():
     """Inicia el servidor HTTP(S) y lo deja escuchando hasta que se detenga."""
     os.chdir(os.path.dirname(__file__))
 
-    use_tls = security.ensure_certs_exist()
-    port = settings.HTTPS_PORT if use_tls else settings.PORT
+    use_tls = False  # Force HTTP for development to avoid cert issues
+    port = settings.PORT  # Use HTTP port 8080
     server_address = (settings.HOST, port)
     
     httpd = HTTPServer(server_address, Handler)
@@ -562,7 +566,7 @@ def run():
         security.wrap_socket(httpd)
         print(f"✅ Server running with TLS on https://{settings.HOST}:{port}")
     else:
-        print(f"⚠️ CERTS not found; running without TLS on http://{settings.HOST}:{port}")
+        print(f"⚠️ Running without TLS on http://{settings.HOST}:{port}")
 
     try:
         httpd.serve_forever()

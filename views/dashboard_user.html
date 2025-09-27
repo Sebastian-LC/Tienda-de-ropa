@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../../static/style.css" />
+    <link rel="stylesheet" href="/static/style.css" />
     
     <title>Dashboard - JAANSTYLE</title>
 
@@ -33,8 +33,8 @@
   <div class="container-fluid">
     <!-- Logo a la izquierda -->
     <a class="navbar-brand d-flex align-items-center" href="#">
-      <img src="../../static/logo/logopequeño.png" alt="JAANSTYLE">
-      <span class="fw-bold">JAANSTYLE</span>
+      <img src="/static/logo/logopequeño.png" alt="JAANSTYLE">
+      <span class="fw-bold">{user.username}</span>
     </a>
 
     <!-- Botón menú móvil -->
@@ -76,7 +76,7 @@
     <main class="content container my-4">
       <!-- Intro -->
       <section class="intro p-3 rounded mb-3">
-        <h1 class="text-warning">Bienvenido, {user.username}</h1>
+        <h1 class="text-warning">Bienvenido</h1>
         <p>
           La venta de ropa personalizada ha sido una gran opción al mercado de
           hoy en día, ya que permite a los clientes expresar su estilo y
@@ -244,37 +244,7 @@
         </a>
       </div>
     </footer>
-  <script>
-  // Validación de creación de prenda
-  document.getElementById('prenda-form').addEventListener('submit', function(e) {
-    const tipo = document.getElementById('tipo-prenda').value.trim();
-    const errorDiv = document.getElementById('prenda-error');
-    let errorMsg = '';
-    if (!tipo) errorMsg = 'Debes seleccionar un tipo de prenda.';
-    // Puedes agregar más validaciones aquí si hay más campos obligatorios
-    if (errorMsg) {
-      e.preventDefault();
-      errorDiv.textContent = errorMsg;
-      errorDiv.classList.remove('d-none');
-    }
-  });
-  // Validación de consultas
-  document.getElementById('consulta-form').addEventListener('submit', function(e) {
-    const nombre = document.getElementById('nombre').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const mensaje = document.getElementById('mensaje').value.trim();
-    const errorDiv = document.getElementById('consulta-error');
-    let errorMsg = '';
-    if (!nombre) errorMsg = 'El nombre es obligatorio.';
-    else if (!email) errorMsg = 'El correo es obligatorio.';
-    else if (!/^\S+@\S+\.\S+$/.test(email)) errorMsg = 'El correo electrónico no es válido.';
-    else if (!mensaje) errorMsg = 'El mensaje es obligatorio.';
-    if (errorMsg) {
-      e.preventDefault();
-      errorDiv.textContent = errorMsg;
-      errorDiv.classList.remove('d-none');
-    }
-  });
-  </script>
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/user-dashboard.js"></script>
   </body>
 </html>

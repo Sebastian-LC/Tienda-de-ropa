@@ -1,0 +1,1 @@
+- [x] Agregar verificación en /admin/set_role para impedir que un admin cambie su propio rol (backend y frontend)
