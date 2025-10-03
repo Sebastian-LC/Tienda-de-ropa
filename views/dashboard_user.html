@@ -96,7 +96,8 @@
           <!-- Tipo de prenda -->
           <div class="mb-3">
             <label for="tipo-prenda" class="form-label">Tipo de prenda</label>
-            <select id="tipo-prenda" class="form-select">
+            <select id="tipo-prenda" class="form-select" onchange="updateEstiloPrenda()">
+              <option value="">Selecciona un tipo</option>
               <option>Camiseta</option>
               <option>Pantalón</option>
               <option>Chaqueta</option>
@@ -104,13 +105,9 @@
             </select>
           </div>
 
-          <div class="mb-3">
+          <div class="mb-3" id="estilo-prenda-div" style="display: none;">
             <label for="estilo-prenda" class="form-label">estilo de prenda</label>
             <select id="estilo-prenda" class="form-select">
-              <option>Camiseta</option>
-              <option>Pantalón</option>
-              <option>Chaqueta</option>
-              <option>Sudadera</option>
             </select>
           </div>
 
@@ -246,5 +243,32 @@
     </footer>
   <script src="/static/js/utils.js"></script>
   <script src="/static/js/user-dashboard.js"></script>
+  <script>
+    const estilos = {
+      'Camiseta': ['Manga larga', 'Manga corta', 'Sin mangas'],
+      'Pantalón': ['Largo', 'Corto', 'Capri'],
+      'Chaqueta': ['Con capucha', 'Sin capucha', 'Bomber'],
+      'Sudadera': ['Con capucha', 'Sin capucha', 'Oversize']
+    };
+
+    function updateEstiloPrenda() {
+      const tipo = document.getElementById('tipo-prenda').value;
+      const div = document.getElementById('estilo-prenda-div');
+      const select = document.getElementById('estilo-prenda');
+      if (tipo === '') {
+        div.style.display = 'none';
+        select.innerHTML = '';
+      } else {
+        div.style.display = 'block';
+        select.innerHTML = '<option value="">Selecciona un estilo</option>';
+        estilos[tipo].forEach(estilo => {
+          const option = document.createElement('option');
+          option.value = estilo;
+          option.textContent = estilo;
+          select.appendChild(option);
+        });
+      }
+    }
+  </script>
   </body>
 </html>
