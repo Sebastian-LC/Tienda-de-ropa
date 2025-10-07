@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/static/style.css" />
+    
     <title>Dashboard - JAANSTYLE</title>
 
     <!-- Conexión al CSS -->
-    <link rel="stylesheet" href="../../static/styles.css" />
 
     <!-- Bootstrap CSS -->
     <link
@@ -32,8 +33,8 @@
   <div class="container-fluid">
     <!-- Logo a la izquierda -->
     <a class="navbar-brand d-flex align-items-center" href="#">
-      <img src="../../static/logo/logopequeño.png" alt="JAANSTYLE">
-      <span class="fw-bold">JAANSTYLE</span>
+      <img src="/static/logo/logopequeño.png" alt="JAANSTYLE">
+      <span class="fw-bold">{user.username}</span>
     </a>
 
     <!-- Botón menú móvil -->
@@ -55,11 +56,15 @@
         <li class="nav-item">
           <a class="nav-link" href="#consultas"> Consultas<i class="fa fa-question-circle"></i></a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#perfil">Perfil<i class="fa fa-user"></i></a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#carrito">Carrito<i class="fa fa-shopping-cart"></i></a>
+        </li>
       </ul>
       <!-- Iconos -->
       <div class="d-flex ms-3">
-        <a href="#" class="nav-link"><i class="fa fa-user"></i></a>
-        <a href="#" class="nav-link"><i class="fa fa-shopping-cart"></i></a>
       </div>
     </div>
   </div>
@@ -71,7 +76,7 @@
     <main class="content container my-4">
       <!-- Intro -->
       <section class="intro p-3 rounded mb-3">
-        <h1 class="text-warning">Bienvenido, {user.username}</h1>
+        <h1 class="text-warning">Bienvenido</h1>
         <p>
           La venta de ropa personalizada ha sido una gran opción al mercado de
           hoy en día, ya que permite a los clientes expresar su estilo y
@@ -81,30 +86,7 @@
         </p>
       </section>
 
-      <!-- Misión -->
-      <section class="mision p-3 rounded  mb-3">
-        <h2 class="text-warning">Misión</h2>
-        <p>
-          Nuestra misión es ofrecer una experiencia única a nuestros clientes al
-          comprar ropa en nuestra página, donde puedes expresar toda tu
-          personalidad y estilo a través de nuestra selección de prendas y
-          accesorios exclusivos. Nos esforzamos en brindarte la mejor calidad al
-          mejor precio, para que se sientan cómodos al vestir nuestros diseños
-          como su página de ropa personalizada favorita.
-        </p>
-      </section>
-
-      <!-- Visión -->
-      <section class="vision p-3 rounded mb-3">
-        <h2 class="text-warning">Visión</h2>
-        <p>
-          Que nuestra página web sea reconocida como la tienda de ropa líder en
-          ofrecer una experiencia de compra personalizada, que refleje la
-          diversidad y originalidad de nuestros clientes. Queremos ser una marca
-          que inspire a las personas a hacer lo más original posible, a través
-          de la moda y el estilo.
-        </p>
-      </section>
+      
 
       <!-- Creación de Prenda -->
       <section id="creacion-prenda" class="p-3 rounded mb-3">
@@ -114,11 +96,18 @@
           <!-- Tipo de prenda -->
           <div class="mb-3">
             <label for="tipo-prenda" class="form-label">Tipo de prenda</label>
-            <select id="tipo-prenda" class="form-select">
+            <select id="tipo-prenda" class="form-select" onchange="updateEstiloPrenda()">
+              <option value="">Selecciona un tipo</option>
               <option>Camiseta</option>
               <option>Pantalón</option>
               <option>Chaqueta</option>
               <option>Sudadera</option>
+            </select>
+          </div>
+
+          <div class="mb-3" id="estilo-prenda-div" style="display: none;">
+            <label for="estilo-prenda" class="form-label">estilo de prenda</label>
+            <select id="estilo-prenda" class="form-select">
             </select>
           </div>
 
@@ -252,37 +241,34 @@
         </a>
       </div>
     </footer>
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/user-dashboard.js"></script>
   <script>
-  // Validación de creación de prenda
-  document.getElementById('prenda-form').addEventListener('submit', function(e) {
-    const tipo = document.getElementById('tipo-prenda').value.trim();
-    const errorDiv = document.getElementById('prenda-error');
-    let errorMsg = '';
-    if (!tipo) errorMsg = 'Debes seleccionar un tipo de prenda.';
-    // Puedes agregar más validaciones aquí si hay más campos obligatorios
-    if (errorMsg) {
-      e.preventDefault();
-      errorDiv.textContent = errorMsg;
-      errorDiv.classList.remove('d-none');
+    const estilos = {
+      'Camiseta': ['Manga larga', 'Manga corta', 'Sin mangas'],
+      'Pantalón': ['Largo', 'Corto', 'Capri'],
+      'Chaqueta': ['Con capucha', 'Sin capucha', 'Bomber'],
+      'Sudadera': ['Con capucha', 'Sin capucha', 'Oversize']
+    };
+
+    function updateEstiloPrenda() {
+      const tipo = document.getElementById('tipo-prenda').value;
+      const div = document.getElementById('estilo-prenda-div');
+      const select = document.getElementById('estilo-prenda');
+      if (tipo === '') {
+        div.style.display = 'none';
+        select.innerHTML = '';
+      } else {
+        div.style.display = 'block';
+        select.innerHTML = '<option value="">Selecciona un estilo</option>';
+        estilos[tipo].forEach(estilo => {
+          const option = document.createElement('option');
+          option.value = estilo;
+          option.textContent = estilo;
+          select.appendChild(option);
+        });
+      }
     }
-  });
-  // Validación de consultas
-  document.getElementById('consulta-form').addEventListener('submit', function(e) {
-    const nombre = document.getElementById('nombre').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const mensaje = document.getElementById('mensaje').value.trim();
-    const errorDiv = document.getElementById('consulta-error');
-    let errorMsg = '';
-    if (!nombre) errorMsg = 'El nombre es obligatorio.';
-    else if (!email) errorMsg = 'El correo es obligatorio.';
-    else if (!/^\S+@\S+\.\S+$/.test(email)) errorMsg = 'El correo electrónico no es válido.';
-    else if (!mensaje) errorMsg = 'El mensaje es obligatorio.';
-    if (errorMsg) {
-      e.preventDefault();
-      errorDiv.textContent = errorMsg;
-      errorDiv.classList.remove('d-none');
-    }
-  });
   </script>
   </body>
 </html>
