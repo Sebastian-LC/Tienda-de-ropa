@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="../static/style/style.css" />
     
     <title>Dashboard - JAANSTYLE</title>
 
@@ -24,7 +24,6 @@
     <!-- Bootstrap JS (para el menú colapsable) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    
   </head>
   <body>
     <!-- Header -->
@@ -48,19 +47,19 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link" href="#creacion-prenda">Creación de prendas <i class="fa fa-tshirt"></i></a>
+          <a class="nav-link" href="#" onclick="mostrarSeccion('creacion-prenda')">Creación de prendas <i class="fa fa-tshirt"></i></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#informes">Informes <i class="fa fa-file-alt"></i></a>
+          <a class="nav-link" href="#" onclick="mostrarSeccion('informes')">Informes <i class="fa fa-file-alt"></i></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#consultas"> Consultas<i class="fa fa-question-circle"></i></a>
+          <a class="nav-link" href="#" onclick="mostrarSeccion('consultas')"> Consultas<i class="fa fa-question-circle"></i></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#perfil">Perfil<i class="fa fa-user"></i></a>
+          <a class="nav-link" href="#" onclick="mostrarSeccion('perfil')">Perfil<i class="fa fa-user"></i></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#carrito">Carrito<i class="fa fa-shopping-cart"></i></a>
+          <a class="nav-link" href="#" onclick="mostrarSeccion('carrito')">Carrito<i class="fa fa-shopping-cart"></i></a>
         </li>
       </ul>
       <!-- Iconos -->
@@ -75,7 +74,7 @@
     <!-- Contenido -->
     <main class="content container my-4">
       <!-- Intro -->
-      <section class="intro p-3 rounded mb-3">
+      <section id="intro" class="intro p-3 rounded mb-3">
         <h1 class="text-warning">Bienvenido</h1>
         <p>
           La venta de ropa personalizada ha sido una gran opción al mercado de
@@ -89,7 +88,7 @@
       
 
       <!-- Creación de Prenda -->
-      <section id="creacion-prenda" class="p-3 rounded mb-3">
+      <section id="creacion-prenda" class="p-3 rounded mb-3 d-none">
         <h2 class="text-warning">Creación de Prenda</h2>
         <div id="prenda-error" class="alert alert-danger d-none" role="alert"></div>
         <form id="prenda-form">
@@ -163,7 +162,7 @@
       </section>
 
       <!-- Informes -->
-      <section id="informes" class="p-3 rounded mb-3">
+      <section id="informes" class="p-3 rounded mb-3 d-none">
         <h2 class="text-warning">Informes</h2>
         <p>Aquí podrás visualizar el historial de tus compras y prendas creadas.</p>
 
@@ -190,7 +189,7 @@
       </section>
 
       <!-- Consultas -->
-      <section id="consultas" class="p-3 rounded mb-3">
+      <section id="consultas" class="p-3 rounded mb-3 d-none">
         <h2 class="text-warning">Consultas</h2>
         <p>Si tienes alguna duda o necesitas ayuda, escríbenos aquí:</p>
         <div id="consulta-error" class="alert alert-danger d-none" role="alert"></div>
@@ -228,6 +227,18 @@
           <button type="submit" class="btn btn-warning fw-bold">Enviar</button>
         </form>
       </section>
+
+      <!-- Perfil -->
+      <section id="perfil" class="p-3 rounded mb-3 d-none">
+        <h2 class="text-warning">Perfil</h2>
+        <p>Aquí puedes gestionar tu información personal.</p>
+      </section>
+
+      <!-- Carrito -->
+      <section id="carrito" class="p-3 rounded mb-3 d-none">
+        <h2 class="text-warning">Carrito</h2>
+        <p>Contenido de tu carrito de compras.</p>
+      </section>
     </main>
 
     <!-- Footer -->
@@ -244,6 +255,19 @@
   <script src="/static/js/utils.js"></script>
   <script src="/static/js/user-dashboard.js"></script>
   <script>
+    function mostrarSeccion(seccionId) {
+      // Ocultar todas las secciones
+      const secciones = document.querySelectorAll('main section');
+      secciones.forEach(seccion => {
+        seccion.classList.add('d-none');
+      });
+      // Mostrar la sección seleccionada
+      const seccion = document.getElementById(seccionId);
+      if (seccion) {
+        seccion.classList.remove('d-none');
+      }
+    }
+
     const estilos = {
       'Camiseta': ['Manga larga', 'Manga corta', 'Sin mangas'],
       'Pantalón': ['Largo', 'Corto', 'Capri'],

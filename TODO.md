@@ -1,1 +1,6 @@
-- [x] Agregar verificación en /admin/set_role para impedir que un admin cambie su propio rol (backend y frontend)
+- [x] Cambiar fondo del body a gris claro (#f8f9fa)
+- [x] Cambiar fondo de la navbar a gris oscuro (#343a40)
+- [x] Cambiar fondos de secciones a blanco (#ffffff)
+- [x] Actualizar colores primarios de botones a azul (#007bff)
+- [x] Actualizar colores de acento a rosa (#e91e63)
+- [x] Ajustar otros elementos como tablas, modales y alertas para que coincidan con la nueva paleta

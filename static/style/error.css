@@ -1,23 +1,22 @@
-/* Fondo con imagen personalizada */
+/* Fondo con color base */
 body {
-  background: url("../logo/mensajedeerror.jpg") no-repeat center center fixed;
-  background-size: cover;
-  color: #fff;
+  background: #F8F1E5;
+  color: #2F3131;
   font-family: Arial, sans-serif;
 }
 
 /* Estilo del contenedor del error */
 .error-container {
-  background: rgba(0, 0, 0, 0.6); /* fondo semitransparente */
+  background: #F8F1E5;
+  border: 2px solid #426E86;
   padding: 40px;
   border-radius: 15px;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.7);
   text-align: center;
 }
 
 .error-container h1 {
   font-size: 8rem;
-  color: #ffcc00;
+  color: #F9BA32;
   font-weight: bold;
 }
 
@@ -29,13 +28,12 @@ body {
 .error-container a {
   text-decoration: none;
   padding: 10px 20px;
-  background: #ffcc00;
-  color: #000;
+  background: #426E86;
+  color: #F8F1E5;
   border-radius: 8px;
   font-weight: bold;
-  transition: 0.3s;
 }
 
 .error-container a:hover {
-  background: #e6b800;
+  background: #2F3131;
 }
