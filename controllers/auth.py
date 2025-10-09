@@ -144,8 +144,11 @@ def reset_failed_attempts(user_id):
     finally:
         db.close()
 
+import time
+
 def login(email, password, client_ip):
     """Realiza el proceso de login, validando credenciales y estado del usuario."""
+    start_time = time.time()
     user = find_user_by_email(email)
     if not user:
         log_access_attempt(None, client_ip, False)
@@ -183,14 +186,21 @@ def login(email, password, client_ip):
     token = os.urandom(16).hex()
     expires = datetime.utcnow() + timedelta(minutes=5)
     SESSIONS[token] = {"user_id": user_id, "expires_at": expires, "verified": False, "pending_2fa": code, "last_activity": datetime.utcnow()}
-    try:
-        from .utils import build_2fa_email
-        html_msg = build_2fa_email(username, code)
-        send_email(email, "Código 2FA - JAANSTYLE", html_msg, html=True)
-    except Exception as e:
-        with open(settings.ACCESS_LOG, "a", encoding="utf-8") as f:
-            f.write(f"{now()} | 2FA for user:{user_id} code:{code} (SMTP_ERROR: {e})\n")
+    import threading
+    def send_2fa_email():
+        try:
+            from .utils import build_2fa_email
+            html_msg = build_2fa_email(username, code)
+            send_email(email, "Código 2FA - JAANSTYLE", html_msg, html=True)
+        except Exception as e:
+            with open(settings.ACCESS_LOG, "a", encoding="utf-8") as f:
+                f.write(f"{now()} | 2FA for user:{user_id} code:{code} (SMTP_ERROR: {e})\n")
+    threading.Thread(target=send_2fa_email).start()
     log_access_attempt(user_id, client_ip, True)
+    end_time = time.time()
+    duration = end_time - start_time
+    with open(settings.ACCESS_LOG, "a", encoding="utf-8") as f:
+        f.write(f"{now()} | LOGIN duration: {duration:.2f} seconds for user {user_id}\n")
     return True, "Se ha enviado un código 2FA al correo.", token, None
 
 def verify_2fa(token, code, client_ip):

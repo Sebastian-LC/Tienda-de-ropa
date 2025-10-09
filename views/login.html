@@ -21,8 +21,14 @@
                 <span>o usa tu email para registrarte</span>
                 <input type="text" placeholder="Nombre" name="username" required>
                 <input type="email" placeholder="Email" name="email" required>
-                <input type="password" placeholder="Contraseña" name="password" required>
-                <input type="password" placeholder="Confirmar contraseña" name="confirm_password" required>
+                <div class="password-container">
+                    <input type="password" id="signup-password" placeholder="Contraseña" name="password" required>
+                    <button type="button" class="toggle-password" data-target="signup-password" title="Mostrar/ocultar contraseña"><i class="fas fa-eye"></i></button>
+                </div>
+                <div class="password-container">
+                    <input type="password" id="signup-confirm" placeholder="Confirmar contraseña" name="confirm_password" required>
+                    <button type="button" class="toggle-password" data-target="signup-confirm" title="Mostrar/ocultar contraseña"><i class="fas fa-eye"></i></button>
+                </div>
                 <button>Registrarse</button>
             </form>
         </div>
@@ -34,7 +40,10 @@
                 </div>
                 <span>o usa tu email y contraseña</span>
                 <input type="email" placeholder="Email" name="email" required>
-                <input type="password" placeholder="Contraseña" name="password" required>
+                <div class="password-container">
+                    <input type="password" id="signin-password" placeholder="Contraseña" name="password" required>
+                    <button type="button" class="toggle-password" data-target="signin-password" title="Mostrar/ocultar contraseña"><i class="fas fa-eye"></i></button>
+                </div>
                 <a href="/forgot-password">¿Olvidaste tu contraseña?</a>
                 <button>Iniciar Sesión</button>
             </form>

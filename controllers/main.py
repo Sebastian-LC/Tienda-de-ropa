@@ -554,12 +554,17 @@ class Handler(BaseHTTPRequestHandler):
 
 def run():
     """Inicia el servidor HTTP(S) y lo deja escuchando hasta que se detenga."""
+    print(f"DEBUG: ROOT_DIR calculado: {ROOT_DIR}")
+    print(f"DEBUG: BASE_DIR desde settings: {settings.BASE_DIR}")
+    print(f"DEBUG: DB_PATH: {settings.DB_PATH}")
+    print(f"DEBUG: ACCESS_LOG: {settings.ACCESS_LOG}")
     os.chdir(os.path.dirname(__file__))
+    print(f"DEBUG: Cambiado cwd a: {os.getcwd()}")
 
     use_tls = False  # Force HTTP for development to avoid cert issues
     port = settings.PORT  # Use HTTP port 8080
     server_address = (settings.HOST, port)
-    
+
     httpd = HTTPServer(server_address, Handler)
 
     if use_tls:

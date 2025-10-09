@@ -1,0 +1,105 @@
+/* =======================
+   ESTILO GENERAL
+======================= */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #111;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-image: url('../logo/fondoAdmin.jpg');
+}
+
+/* Contenedor principal */
+.container {
+    background-color: #1a1a1a;
+    padding: 40px 30px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(179, 0, 0, 0.6);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+/* Título */
+.container h1 {
+    margin-bottom: 25px;
+    color: #b30000;
+    font-size: 1.8rem;
+    border-bottom: 2px solid #b30000;
+    padding-bottom: 8px;
+}
+
+/* Formularios */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+label {
+    text-align: left;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #ccc;
+}
+
+input[type="file"] {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background-color: #222;
+    color: #eee;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s;
+}
+
+input[type="file"]:focus {
+    border-color: #b3b000;
+    box-shadow: 0 0 5px #b30000;
+}
+
+/* Botón */
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    background-color: #580000;
+    color: #fff;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background-color: #b3b300;
+    transform: scale(1.05);
+}
+
+/* Link para volver al panel */
+a {
+    display: inline-block;
+    margin-top: 15px;
+    color: #ccc;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #b3ad00;
+}
+
+/* Responsivo */
+@media (max-width: 480px) {
+    .container {
+        padding: 30px 20px;
+    }
+
+    .container h1 {
+        font-size: 1.5rem;
+    }
+}

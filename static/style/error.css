@@ -3,6 +3,7 @@ body {
   background: #F8F1E5;
   color: #2F3131;
   font-family: Arial, sans-serif;
+  background-image: url('../logo/fondoAdmin.jpg');
 }
 
 /* Estilo del contenedor del error */

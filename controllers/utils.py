@@ -29,6 +29,7 @@ from config import settings
 
 def send_email(to_email, subject, message, html=False):
     """Envía un correo electrónico usando SMTP y los datos de settings."""
+    print(f"DEBUG: Intentando enviar email a {to_email} con subject '{subject}'")
     try:
         msg = MIMEMultipart("alternative")
         msg["From"] = settings.SMTP_USER
@@ -40,14 +41,20 @@ def send_email(to_email, subject, message, html=False):
         else:
             msg.attach(MIMEText(message, "plain", "utf-8"))
 
+        print(f"DEBUG: Conectando a SMTP {settings.SMTP_SERVER}:{settings.SMTP_PORT}")
         with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
             server.starttls()
+            print(f"DEBUG: Logueando con user {settings.SMTP_USER}")
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            print("DEBUG: Enviando mensaje")
             server.send_message(msg)
+            print("DEBUG: Email enviado exitosamente")
 
         return True
     except Exception as e:
-        print("Failed to send email:", e)
+        print(f"DEBUG: Failed to send email: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 

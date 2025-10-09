@@ -1,0 +1,236 @@
+/* =======================
+   ESTILO GENERAL
+======================= */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #111;
+  color: #eee;
+  background-image: url('../logo/fondoAdmin.jpg');
+}
+
+h2, label{
+  color: #000000;
+  border-bottom: 2px solid #7c0000;
+  padding-bottom: 5px;
+}
+
+p{
+  color: #000000;
+}
+
+/* =======================
+   NAVBAR SUPERIOR
+======================= */
+.navbar {
+  background-color: #2b0000b4;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 25px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo img {
+  height: 40px;
+}
+
+.menu-toggle {
+  display: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.nav ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav ul li {
+  margin-left: 20px;
+}
+
+.nav a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s, transform 0.3s;
+}
+
+.nav a:hover {
+  color: yellow;
+}
+
+/* Menú responsivo */
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+  .nav {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    background-color: #2b0000;
+    border-radius: 10px;
+    padding: 10px;
+  }
+  .nav.show {
+    display: block;
+  }
+  .nav ul {
+    flex-direction: column;
+    text-align: right;
+  }
+  .nav ul li {
+    margin: 10px 0;
+  }
+}
+
+/* =======================
+   SECCIONES
+======================= */
+main {
+  padding: 20px;
+}
+
+.seccion {
+  background-color: #ffffffa8;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.oculto {
+  display: none;
+}
+
+/* =======================
+   TABLAS
+======================= */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+thead th {
+  background-color: #2b0000;
+  color: white;
+  border: 1px solid white;
+}
+
+tbody td {
+  border: 1px solid #666;
+  padding: 8px;
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #2a2a2a;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #333;
+}
+
+tbody tr:hover {
+  background-color: rgba(56, 0, 0, 0.911);
+}
+
+/* =======================
+   BOTONES
+======================= */
+button {
+  background-color: #580000;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:hover {
+  background-color: rgb(0, 0, 0);
+  color: rgb(255, 255, 255);
+  transform: scale(1.05);
+}
+
+/* =======================
+   FOOTER
+======================= */
+footer {
+  background-color: #000000a5;
+  color: #ccc;
+  text-align: center;
+  padding: 10px;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  font-size: 0.9rem;
+}
+
+/* =======================
+   CAMPOS DE ENTRADA Y BÚSQUEDA
+======================= */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+select,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 5px 0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #222;
+  color: #eee;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #aaa;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #b30000;
+  background-color: #1a1a1a;
+  box-shadow: 0 0 5px #b30000;
+}
+
+/* Botones dentro de formularios (para buscar o limpiar) */
+input[type="submit"],
+input[type="button"],
+button {
+  margin-top: 8px;
+}
+
+/* Grupo de búsqueda (input + botón juntos) */
+.search-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-group input[type="text"] {
+  flex: 1;
+}
+
+.search-group button {
+  flex-shrink: 0;
+}

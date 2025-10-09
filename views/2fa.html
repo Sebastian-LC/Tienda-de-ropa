@@ -4,20 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Verificación 2FA</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="../static/style/style.css">
 </head>
 <body>
-    <div class="container mt-5" style="max-width:400px;">
+    <div class="container mt-5" style="max-width:400px; margin: 0 auto; text-align: center;">
         <h1 class="mb-3">Verificación en dos pasos</h1>
-        <div class="alert alert-info">{msg}</div>
+        <div>{msg}</div>
         <form action="/verify-2fa" method="post" id="fa-form">
             <label for="code" class="form-label">Código 2FA enviado a tu correo:</label>
             <input type="text" id="code" name="code" class="form-control mb-2" required>
             <input type="hidden" name="token" value="{token}">
             <div id="fa-error" class="alert alert-danger d-none" role="alert"></div>
-            <button type="submit" class="btn btn-primary w-100">Verificar</button>
+            <br>
+            <button type="submit">Verificar</button>
         </form>
-        <a href="/">Volver al inicio</a>
+        <br>
+        <a href="/"><button>Volver al inicio</button></a>
     </div>
     <script>
     document.getElementById('fa-form').addEventListener('submit', function(e) {
