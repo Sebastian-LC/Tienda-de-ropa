@@ -1,6 +1,6 @@
-# Diagnóstico del problema con envío de correos de verificación
+# TODO: Mostrar informes de productos creados por el usuario en dashboard_user.html
 
-## Información recopilada
+## Pasos a completar:
 - El servidor se inicia correctamente con ambos comandos.
 - Los comandos son:
   - `python -m controllers.main` (desde cualquier directorio)
@@ -32,3 +32,14 @@
 ## Siguientes pasos
 - Ejecutar en entorno problemático y reportar salida.
 - Si SMTP falla, intentar con puerto 465 y server.starttls() -> server.login() sin starttls.
+
+
+## funciones
+- crud de los que falta crear excepto los usuarios
+- que estos crud de estas tablas se relacionen 
+- que dentro de la pagina de usuario se comunque con estas tablas
+- crear tablas que falta como tela por ejemplo
+- que funcione la seccion de crear prenda al completo y muestre un resumen de lo seleccionado previamente
+- importante no meterse con lo que es compras y pagos
+- fecha limite hasta el 22 para tener todo esto
+- con mi compañero crear las tablas transaccionales para las tablas previas 

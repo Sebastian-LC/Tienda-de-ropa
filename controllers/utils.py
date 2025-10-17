@@ -16,6 +16,9 @@ def hash_password(password, salt, iterations=100_000):
 
 def verify_password(password, salt_hex, stored_hash):
     """Verifica si la contraseña y salt generan el hash esperado."""
+    if ":" in stored_hash:
+        # Nuevo formato: salt:hash
+        salt_hex, stored_hash = stored_hash.split(":", 1)
     return hash_password(password, salt_hex) == stored_hash
 
 def gen_2fa_code():

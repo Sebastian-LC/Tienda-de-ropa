@@ -216,29 +216,89 @@
 
   <!-- Modal de creación de usuario -->
 <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="createUserModalLabel">Crear Usuario</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
         <form id="createUserForm">
-          <div class="mb-3">
-            <label for="createUsername" class="form-label">Username</label>
-            <input type="text" class="form-control" id="createUsername" name="username" required>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="createUsername" class="form-label">Username</label>
+              <input type="text" class="form-control" id="createUsername" name="username" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="createEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="createEmail" name="email" required>
+            </div>
           </div>
-          <div class="mb-3">
-            <label for="createEmail" class="form-label">Email</label>
-            <input type="email" class="form-control" id="createEmail" name="email" required>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="createPassword" class="form-label">Contraseña</label>
+              <input type="password" class="form-control" id="createPassword" name="password" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="createConfirmPassword" class="form-label">Confirmar Contraseña</label>
+              <input type="password" class="form-control" id="createConfirmPassword" name="confirm_password" required>
+            </div>
           </div>
-          <div class="mb-3">
-            <label for="createPassword" class="form-label">Contraseña</label>
-            <input type="password" class="form-control" id="createPassword" name="password" required>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="createFirstName" class="form-label">Primer Nombre</label>
+              <input type="text" class="form-control" id="createFirstName" name="first_name" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="createMiddleName" class="form-label">Segundo Nombre</label>
+              <input type="text" class="form-control" id="createMiddleName" name="middle_name">
+            </div>
           </div>
-          <div class="mb-3">
-            <label for="createConfirmPassword" class="form-label">Confirmar Contraseña</label>
-            <input type="password" class="form-control" id="createConfirmPassword" name="confirm_password" required>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="createLastName" class="form-label">Apellido</label>
+              <input type="text" class="form-control" id="createLastName" name="last_name" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="createSecondLastName" class="form-label">Segundo Apellido</label>
+              <input type="text" class="form-control" id="createSecondLastName" name="second_last_name">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="createIdTipoDocumento" class="form-label">Tipo de Documento</label>
+              <select class="form-control" id="createIdTipoDocumento" name="id_tipo_documento" required>
+                <option value="">Selecciona tipo de documento</option>
+                <option value="1">CC</option>
+                <option value="2">CE</option>
+                <option value="3">TI</option>
+                <option value="4">PA</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="createDocumento" class="form-label">Número de Documento</label>
+              <input type="text" class="form-control" id="createDocumento" name="documento" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="createAddress1" class="form-label">Dirección 1</label>
+              <input type="text" class="form-control" id="createAddress1" name="address1" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="createAddress2" class="form-label">Dirección 2</label>
+              <input type="text" class="form-control" id="createAddress2" name="address2">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="createPhone1" class="form-label">Teléfono 1</label>
+              <input type="text" class="form-control" id="createPhone1" name="phone1" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="createPhone2" class="form-label">Teléfono 2</label>
+              <input type="text" class="form-control" id="createPhone2" name="phone2">
+            </div>
           </div>
           <div id="createUserError" class="text-danger mt-2" style="display:none;"></div>
         </form>

@@ -91,97 +91,106 @@
       <section id="creacion-prenda" class="p-3 rounded mb-3 d-none">
         <h2>Creación de Prenda</h2>
         <div id="prenda-error" class="alert alert-danger d-none" role="alert"></div>
+        <div id="prenda-success" class="alert alert-success d-none" role="alert"></div>
         <form id="prenda-form">
-          <!-- Tipo de prenda -->
+          <!-- Nombre -->
           <div class="mb-3">
-            <label for="tipo-prenda" class="form-label">Tipo de prenda</label>
-            <select id="tipo-prenda" class="form-select" onchange="updateEstiloPrenda()">
-              <option value="">Selecciona un tipo</option>
-              <option>Camiseta</option>
-              <option>Pantalón</option>
-              <option>Chaqueta</option>
-              <option>Sudadera</option>
+            <label for="nombre" class="form-label">Nombre de la prenda</label>
+            <input type="text" id="nombre" name="nombre" class="form-control" required>
+          </div>
+
+          <!-- Prenda -->
+          <div class="mb-3">
+            <label for="id_prenda" class="form-label">Prenda</label>
+            <select id="id_prenda" name="id_prenda" class="form-select" onchange="loadTiposPrenda(); updateSummary()" required>
+              <option value="">Selecciona una prenda</option>
+              <!-- loop prendas -->
+              <option value="{item.id}">{item.nombre}</option>
+              <!-- endloop -->
             </select>
           </div>
 
-          <div class="mb-3" id="estilo-prenda-div" style="display: none;">
-            <label for="estilo-prenda" class="form-label">estilo de prenda</label>
-            <select id="estilo-prenda" class="form-select">
+          <!-- Tipo de prenda -->
+          <div class="mb-3">
+            <label for="id_tipo_prenda" class="form-label">Tipo de prenda</label>
+            <select id="id_tipo_prenda" name="id_tipo_prenda" class="form-select" onchange="updateSummary()" required>
+              <option value="">Selecciona un tipo</option>
             </select>
           </div>
 
           <!-- Tela -->
           <div class="mb-3">
-            <label for="tela" class="form-label">Tela</label>
-            <select id="tela" class="form-select">
-              <option>Algodón</option>
-              <option>Poliéster</option>
-              <option>Mezclilla</option>
-              <option>Lino</option>
+            <label for="id_tela" class="form-label">Tela</label>
+            <select id="id_tela" name="id_tela" class="form-select" onchange="updateSummary()" required>
+              <option value="">Selecciona una tela</option>
+              <!-- loop telas -->
+              <option value="{item.id}">{item.nombre}</option>
+              <!-- endloop -->
             </select>
           </div>
 
-          <!-- Color -->
+          <!-- Estilo -->
           <div class="mb-3">
-            <label for="color" class="form-label">Color</label>
-            <input
-              type="color"
-              id="color"
-              class="form-control form-control-color"
-              value="#000000"
-            />
-          </div>
-
-          <!-- Estampado -->
-          <div class="mb-3">
-            <label for="estampado" class="form-label">Estampado</label>
-            <select id="estampado" class="form-select">
-              <option>Sin estampado</option>
-              <option>Logo</option>
-              <option>Texto personalizado</option>
-              <option>Imagen</option>
+            <label for="id_estilo" class="form-label">Estilo</label>
+            <select id="id_estilo" name="id_estilo" class="form-select" onchange="updateSummary()" required>
+              <option value="">Selecciona un estilo</option>
+              <!-- loop estilos -->
+              <option value="{item.id}">{item.nombre}</option>
+              <!-- endloop -->
             </select>
           </div>
 
-          <!-- Talla -->
+          <!-- Molde -->
           <div class="mb-3">
-            <label for="talla" class="form-label">Talla</label>
-            <select id="talla" class="form-select">
-              <option>S</option>
-              <option>M</option>
-              <option>L</option>
-              <option>XL</option>
+            <label for="id_molde" class="form-label">Molde</label>
+            <select id="id_molde" name="id_molde" class="form-select" onchange="updateSummary()" required>
+              <option value="">Selecciona un molde</option>
+              <!-- loop moldes -->
+              <option value="{item.id}">{item.nombre}</option>
+              <!-- endloop -->
             </select>
           </div>
+
+          <!-- Resumen -->
+          <div class="mb-3">
+            <label class="form-label">Resumen de la prenda</label>
+            <div id="prenda-summary" class="alert alert-info"></div>
+          </div>
+
+          <input type="hidden" id="descripcion" name="descripcion">
 
           <!-- Botón -->
-          <button type="submit">
-            Crear Prenda
-          </button>
+          <button type="button" id="crear-prenda-btn">Crear Prenda</button>
         </form>
       </section>
 
       <!-- Informes -->
       <section id="informes" class="p-3 rounded mb-3 d-none">
         <h2>Informes</h2>
-        <p>Aquí podrás visualizar el historial de tus compras y prendas creadas.</p>
+        <p>Aquí podrás visualizar el historial de tus prendas creadas.</p>
 
         <table class="table  table-hover text-center align-middle">
           <thead>
             <tr>
               <th>Fecha</th>
               <th>Prenda</th>
-              <th>Talla</th>
+              <th>Estilo</th>
+              <th>Tela</th>
+              <th>Molde</th>
+              <th>Descripción</th>
               <th>Estado</th>
             </tr>
           </thead>
           <tbody>
-            <!-- loop orders -->
+            <!-- loop products -->
             <tr>
               <td>{item.date}</td>
-              <td>{item.garment}</td>
-              <td>{item.size}</td>
-              <td>{item.status}</td>
+              <td>{item.prenda}</td>
+              <td>{item.estilo}</td>
+              <td>{item.tela}</td>
+              <td>{item.molde}</td>
+              <td>{item.descripcion}</td>
+              <td>{item.estado}</td>
             </tr>
             <!-- endloop -->
           </tbody>

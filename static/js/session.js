@@ -51,8 +51,8 @@ function resetSessionTimer() {
   sessionTimeout = 10 * 60;
   warningShown = false;
   updateTimerDisplay();
-  // Extender sesión en servidor
-  fetch('/extend_session').catch(console.error);
+  // Extender sesión en servidor (sin debug)
+  fetch('/extend_session', { method: 'GET' }).catch(console.error);
 }
 
 // Inicializar temporizador de sesión

@@ -13,13 +13,13 @@
 
     <div class="container" id="container">
         <div class="form-container sign-up">
-            <form action="/forms" method="POST">
-                <h1>Crear Cuenta</h1>
-                <div class="social-icons">
-                    <a href="#" class="icon"><i class="fa-brands fa-google-plus-g"></i></a>
-                </div>
-                <span>o usa tu email para registrarte</span>
-                <input type="text" placeholder="Nombre" name="username" required>
+            <form action="/forms" method="POST" style="max-height: 450px; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-start;">
+            <h1>Crear Cuenta</h1>
+            <div class="social-icons">
+                <a href="#" class="icon"><i class="fa-brands fa-google-plus-g"></i></a>
+            </div>
+            <span>o usa tu email para registrarte</span>
+                <input type="text" placeholder="Usuario" name="username" required>
                 <input type="email" placeholder="Email" name="email" required>
                 <div class="password-container">
                     <input type="password" id="signup-password" placeholder="Contraseña" name="password" required>
@@ -29,6 +29,23 @@
                     <input type="password" id="signup-confirm" placeholder="Confirmar contraseña" name="confirm_password" required>
                     <button type="button" class="toggle-password" data-target="signup-confirm" title="Mostrar/ocultar contraseña"><i class="fas fa-eye"></i></button>
                 </div>
+                <input type="text" placeholder="Primer nombre" name="first_name" required>
+                <input type="text" placeholder="Segundo nombre" name="middle_name">
+                <input type="text" placeholder="Apellido" name="last_name" required>
+                <input type="text" placeholder="Segundo apellido" name="second_last_name">
+                <label for="id_tipo_documento" style="display: block; margin: 10px 0 5px 0; font-weight: bold;">Tipo de documento</label>
+                <select id="id_tipo_documento" name="id_tipo_documento" required style="width: 100%; padding: 10px; margin: 10px 0; border: none; outline: none; background: #eee; border-radius: 10px;">
+                    <option value="">Selecciona tipo de documento</option>
+                    <option value="1">CC</option>
+                    <option value="2">CE</option>
+                    <option value="3">TI</option>
+                    <option value="4">PA</option>
+                </select>
+                <input type="text" placeholder="Número de documento" name="documento" required>
+                <input type="text" placeholder="Direccion 1" name="address1" required>
+                <input type="text" placeholder="Direccion 2" name="address2">
+                <input type="text" placeholder="Telefono 1" name="phone1" required>
+                <input type="text" placeholder="Telefono 2" name="phone2">
                 <button>Registrarse</button>
             </form>
         </div>
@@ -46,6 +63,7 @@
                 </div>
                 <a href="/forgot-password">¿Olvidaste tu contraseña?</a>
                 <button>Iniciar Sesión</button>
+                {error_message_div}
             </form>
         </div>
         <div class="toggle-container">

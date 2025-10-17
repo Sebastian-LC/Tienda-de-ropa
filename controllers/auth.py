@@ -11,12 +11,22 @@ import os
 # Sessions simple en memoria: session_id -> {user_id, expires_at, last_activity, roles, pending_2fa}
 SESSIONS = {}
 
-def create_user(username, email, password) -> tuple[bool, str]:
-    """Crea un nuevo usuario con validaciones y rol por defecto."""
+def create_user(username, email, password, first_name="", middle_name="", last_name="", second_last_name="", address1="", address2="", phone1="", phone2="", id_tipo_documento=1, numero_documento="") -> tuple[bool, str]:
+    """Crea un nuevo usuario con validaciones y rol por defecto, incluyendo datos adicionales en 'usuario'."""
     print("==== DEBUG CREATE_USER ====")
     print("Username:", username)
     print("Email:", email)
     print("Password:", password)
+    print("First Name:", first_name)
+    print("Middle Name:", middle_name)
+    print("Last Name:", last_name)
+    print("Second Last Name:", second_last_name)
+    print("Address1:", address1)
+    print("Address2:", address2)
+    print("Phone1:", phone1)
+    print("Phone2:", phone2)
+    print("Id Tipo Documento:", id_tipo_documento)
+    print("Numero Documento:", numero_documento)
     ok, msg = validate_required({"username": username, "email": email, "password": password})
     if not ok:
         print("Fallo en required:", msg)
@@ -33,7 +43,7 @@ def create_user(username, email, password) -> tuple[bool, str]:
     try:
         cur = db.cursor()
         # Verificar correo único (HU-04)
-        cur.execute("SELECT 1 FROM users WHERE email = ?", (email,))
+        cur.execute("SELECT 1 FROM users WHERE correo = ?", (email,))
         if cur.fetchone():
             return False, "El correo ya está registrado."
         cur.execute("SELECT 1 FROM users WHERE username = ?", (username,))
@@ -41,7 +51,8 @@ def create_user(username, email, password) -> tuple[bool, str]:
             return False, "El nombre de usuario ya existe."
         salt = gen_salt()
         phash = hash_password(password, salt)
-        cur.execute("INSERT INTO users (username, email, password_hash, salt) VALUES (?, ?, ?, ?)", (username, email, phash, salt))
+        stored_hash = f"{salt}:{phash}"
+        cur.execute("INSERT INTO users (username, correo, contraseña, rol, enabled) VALUES (?, ?, ?, 'usuario', 1)", (username, email, stored_hash))
         user_id = cur.lastrowid
         # Asignar rol 'usuario' automáticamente
         cur.execute("SELECT id FROM roles WHERE role_name = 'usuario'")
@@ -49,6 +60,19 @@ def create_user(username, email, password) -> tuple[bool, str]:
         if row:
             usuario_role_id = row[0]
             cur.execute("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", (user_id, usuario_role_id))
+        # Obtener el nombre del tipo de documento
+        cur.execute("SELECT nombre FROM tipo_documento WHERE id_tipo_documento = ?", (id_tipo_documento,))
+        tipo_row = cur.fetchone()
+        if not tipo_row:
+            return False, "Tipo de documento inválido."
+        nombre_tipo = tipo_row[0]
+        # Insertar nuevo registro en tipo_documento con el nombre del tipo y el número de documento
+        cur.execute("INSERT INTO tipo_documento (nombre, Number) VALUES (?, ?)", (nombre_tipo, numero_documento))
+        nuevo_id_tipo_documento = cur.lastrowid
+        # Insertar datos adicionales en 'usuario' con el nuevo id_tipo_documento
+        direccion = f"{address1} {address2}".strip()
+        cur.execute("INSERT INTO usuario (id_usuario, nombre1, nombre2, apellido1, apellido2, direccion, telefono1, telefono2, id_tipo_documento) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (user_id, first_name, middle_name, last_name, second_last_name, direccion, phone1, phone2, nuevo_id_tipo_documento))
         db.commit()
         print("Usuario creado con id:", user_id)
         log_db_action(user_id, "CREATED USER")
@@ -65,7 +89,7 @@ def find_user_by_email(email):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT id, username, email, password_hash, salt, failed_attempts, blocked, enabled FROM users WHERE email = ?", (email,))
+        cur.execute("SELECT id_usuario, username, correo, contraseña, failed_attempts, blocked, enabled FROM users WHERE correo = ?", (email,))
         row = cur.fetchone()
         return row
     finally:
@@ -97,11 +121,59 @@ def get_user_orders(user_id):
     finally:
         db.close()
 
+def get_user_products(user_id):
+    """Obtiene los productos creados por un usuario por su ID."""
+    print(f"DEBUG get_user_products: user_id={user_id}")
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        # Obtener id_cliente
+        cur.execute("SELECT id_cliente FROM usuario WHERE id_usuario = ?", (user_id,))
+        cliente_row = cur.fetchone()
+        if not cliente_row:
+            print("DEBUG: No id_cliente encontrado para user_id")
+            return []
+        id_cliente = cliente_row[0]
+        print(f"DEBUG: id_cliente={id_cliente}")
+        # Verificar productos sin JOIN
+        cur.execute("SELECT id_prenda, id_estilo, id_estado, created_at FROM producto WHERE id_cliente = ?", (id_cliente,))
+        raw_products = cur.fetchall()
+        print(f"DEBUG: Productos raw para id_cliente={id_cliente}: {raw_products}")
+        # Consulta con JOIN para obtener toda la información del producto
+        cur.execute("""
+            SELECT p.created_at, pr.nombre AS prenda, e.nombre AS estilo, es.descripcion AS estado, p.descripcion, t.nombre AS tela, m.nombre AS molde
+            FROM producto p
+            JOIN prenda pr ON p.id_prenda = pr.id_prenda
+            JOIN estilo e ON p.id_estilo = e.id_estilo
+            JOIN estados es ON p.id_estado = es.id_estado
+            JOIN tela t ON p.id_tela = t.id_tela
+            JOIN molde m ON p.id_molde = m.id_molde
+            WHERE p.id_cliente = ?
+            ORDER BY p.created_at DESC
+        """, (id_cliente,))
+        rows = cur.fetchall()
+        print(f"DEBUG: Resultados del JOIN: {rows}")
+        products = []
+        for row in rows:
+            products.append({
+                "date": row[0] or "Sin fecha",
+                "prenda": row[1] or "N/A",
+                "estilo": row[2] or "N/A",
+                "estado": row[3] or "N/A",
+                "descripcion": row[4] or "N/A",
+                "tela": row[5] or "N/A",
+                "molde": row[6] or "N/A"
+            })
+        print(f"DEBUG: Products list: {products}")
+        return products
+    finally:
+        db.close()
+
 def get_user_by_id(user_id):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT id, username, email FROM users WHERE id = ? AND enabled = 1", (user_id,))
+        cur.execute("SELECT id_usuario, username, correo FROM users WHERE id_usuario = ? AND enabled = 1", (user_id,))
         row = cur.fetchone()
         if not row:
             return None
@@ -114,17 +186,17 @@ def increment_failed_attempts(user_id):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("UPDATE users SET failed_attempts = failed_attempts + 1 WHERE id = ?", (user_id,))
+        cur.execute("UPDATE users SET failed_attempts = failed_attempts + 1 WHERE id_usuario = ?", (user_id,))
         db.commit()
-        cur.execute("SELECT failed_attempts FROM users WHERE id = ?", (user_id,))
+        cur.execute("SELECT failed_attempts FROM users WHERE id_usuario = ?", (user_id,))
         fa = cur.fetchone()[0]
         if fa >= settings.MAX_FAILED_ATTEMPTS:
             # Bloqueo temporal: 10 minutos
             blocked_until = int(time.time()) + 600
-            cur.execute("UPDATE users SET blocked = 1, blocked_until = ? WHERE id = ?", (blocked_until, user_id))
+            cur.execute("UPDATE users SET blocked = 1, blocked_until = ? WHERE id_usuario = ?", (blocked_until, user_id))
             db.commit()
             # alert email (look up user email)
-            cur.execute("SELECT email FROM users WHERE id = ?", (user_id,))
+            cur.execute("SELECT correo FROM users WHERE id_usuario = ?", (user_id,))
             email = cur.fetchone()[0]
             try:
                 send_email(email, "Cuenta bloqueada", "Su cuenta ha sido bloqueada temporalmente después de varios intentos fallidos. Podrá intentar de nuevo en 10 minutos.")
@@ -139,7 +211,7 @@ def reset_failed_attempts(user_id):
     """Reinicia el contador de intentos fallidos de login para un usuario."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
-        db.execute("UPDATE users SET failed_attempts = 0 WHERE id = ?", (user_id,))
+        db.execute("UPDATE users SET failed_attempts = 0 WHERE id_usuario = ?", (user_id,))
         db.commit()
     finally:
         db.close()
@@ -153,18 +225,18 @@ def login(email, password, client_ip):
     if not user:
         log_access_attempt(None, client_ip, False)
         return False, "Credenciales inválidas.", None, None
-    user_id, username, email, phash, salt, failed_attempts, blocked, enabled = user
+    user_id, username, email, phash, failed_attempts, blocked, enabled = user
     # Verificar bloqueo temporal
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT blocked, blocked_until FROM users WHERE id = ?", (user_id,))
+        cur.execute("SELECT blocked, blocked_until FROM users WHERE id_usuario = ?", (user_id,))
         blocked_val, blocked_until = cur.fetchone()
         if blocked_val:
             now_ts = int(time.time())
             if blocked_until and now_ts >= blocked_until:
                 # Desbloquear automáticamente
-                cur.execute("UPDATE users SET blocked = 0, blocked_until = NULL, failed_attempts = 0 WHERE id = ?", (user_id,))
+                cur.execute("UPDATE users SET blocked = 0, blocked_until = NULL, failed_attempts = 0 WHERE id_usuario = ?", (user_id,))
                 db.commit()
             else:
                 log_access_attempt(user_id, client_ip, False)
@@ -175,7 +247,7 @@ def login(email, password, client_ip):
     if not enabled:
         log_access_attempt(user_id, client_ip, False)
         return False, "Usuario deshabilitado. Contacte a un administrador.", None, None
-    if not verify_password(password, salt, phash):
+    if not verify_password(password, None, phash):
         increment_failed_attempts(user_id)
         log_access_attempt(user_id, client_ip, False)
         # Calcular intentos restantes
@@ -219,7 +291,7 @@ def verify_2fa(token, code, client_ip):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT enabled FROM users WHERE id = ?", (ses["user_id"],))
+        cur.execute("SELECT enabled FROM users WHERE id_usuario = ?", (ses["user_id"],))
         row = cur.fetchone()
         if not row or row[0] != 1:
             del SESSIONS[token]
@@ -285,7 +357,7 @@ def logout(session_id):
         log_db_action(user_id, "LOGOUT")
 
 def get_roles_for_user(user_id):
-    """Obtiene la lista de roles asignados a un usuario."""
+    """Obtiene la lista de roles asignados a un usuario desde user_roles."""
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -311,11 +383,11 @@ def reauthenticate(user_id, password_attempt):
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        cur.execute("SELECT password_hash, salt FROM users WHERE id = ?", (user_id,))
+        cur.execute("SELECT contraseña FROM users WHERE id_usuario = ?", (user_id,))
         row = cur.fetchone()
         if not row:
             return False
-        phash, salt = row
-        return verify_password(password_attempt, salt, phash)
+        phash = row[0]
+        return verify_password(password_attempt, None, phash)
     finally:
         db.close()

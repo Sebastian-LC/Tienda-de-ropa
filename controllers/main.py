@@ -43,7 +43,11 @@ def render_template(name, **ctx):
 
         rendered_loop = ""
         if not items:
-            return "<tr><td colspan='99' class='text-center'>No hay datos.</td></tr>"
+            # Mensaje alternativo si la lista está vacía
+            if list_name == "products":
+                return "<tr><td colspan='4' class='text-center'>No hay productos disponibles.</td></tr>"
+            else:
+                return "<tr><td colspan='99' class='text-center'>No hay pedidos disponibles.</td></tr>"
 
         for i, item in enumerate(items):
             print(f"DEBUG TEMPLATE: Item {i} - {item}")
@@ -78,6 +82,9 @@ def render_template(name, **ctx):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass  # Deshabilitar logs del servidor HTTP
+
     def do_GET(self):
         """Maneja las peticiones GET: rutas, estáticos, dashboards, AJAX."""
         # Servir archivos estáticos
@@ -98,11 +105,18 @@ class Handler(BaseHTTPRequestHandler):
                     content_type = 'image/gif'
                 else:
                     content_type = 'application/octet-stream'
-                with open(static_file, 'rb') as f:
-                    self.respond(200, f.read(), content_type=content_type)
+                try:
+                    with open(static_file, 'rb') as f:
+                        self.respond(200, f.read(), content_type=content_type)
+                except ConnectionAbortedError:
+                    # Cliente cerró la conexión, ignorar
+                    pass
                 return
             else:
-                self.respond(404, "Archivo estático no encontrado")
+                try:
+                    self.respond(404, "Archivo estático no encontrado")
+                except ConnectionAbortedError:
+                    pass
                 return
 
         if maintenance.is_maintenance():
@@ -122,27 +136,49 @@ class Handler(BaseHTTPRequestHandler):
 
             user_id = session_data["user_id"]
             user = auth.get_user_by_id(user_id)
-            orders = auth.get_user_orders(user_id)
-            
+            products = auth.get_user_products(user_id)
+
             # Render a different dashboard based on role
-            if "admin" in session_data.get("roles", []):
+            if "administrator" in session_data.get("roles", []):
                 template_name = "dashboard_admin.html"
             else:
                 template_name = "dashboard_user.html"
-            
-            self.respond(200, render_template(template_name, user=user, orders=orders))
+
+            # Consultar datos para selectores dinámicos
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                # Prendas
+                cur.execute("SELECT id_prenda, nombre FROM prenda")
+                prendas = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                # Telas
+                cur.execute("SELECT id_tela, nombre FROM tela")
+                telas = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                # Estilos
+                cur.execute("SELECT id_estilo, nombre FROM estilo")
+                estilos = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                # Moldes
+                cur.execute("SELECT id_molde, nombre FROM molde")
+                moldes = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                # Estados
+                cur.execute("SELECT id_estado, descripcion FROM estados")
+                estados = [{"id": r[0], "descripcion": r[1]} for r in cur.fetchall()]
+            finally:
+                db.close()
+
+            self.respond(200, render_template(template_name, user=user, products=products, prendas=prendas, telas=telas, estilos=estilos, moldes=moldes, estados=estados))
         
         elif self.path == "/admin/users":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.redirect("/")
                 return
             user = auth.get_user_by_id(session_data["user_id"])
             db = sqlite3.connect(settings.DB_PATH)
             try:
                 cur = db.cursor()
-                cur.execute("SELECT id, username, email, enabled FROM users")
+                cur.execute("SELECT id_usuario, username, correo, enabled FROM users")
                 users = []
                 for row in cur.fetchall():
                     enabled = row[3]
@@ -169,7 +205,6 @@ class Handler(BaseHTTPRequestHandler):
                         "disabled": disabled,
                         "role_id": role_id
                     }
-                    print(f"DEBUG: Usuario procesado - ID: {user_data['id']}, Username: '{user_data['username']}', Email: '{user_data['email']}'")
                     users.append(user_data)
             finally:
                 db.close()
@@ -200,7 +235,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path.startswith("/admin/search_user"):
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.redirect("/")
                 return
             from urllib.parse import urlparse, parse_qs
@@ -212,10 +247,10 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 cur = db.cursor()
                 if q:
-                    cur.execute("SELECT id, username, email, enabled FROM users WHERE username LIKE ?", (f"%{q}%",))
+                    cur.execute("SELECT id_usuario, username, correo, enabled FROM users WHERE username LIKE ?", (f"%{q}%",))
                 else:
                     # Si q vacío, cargar todos los usuarios
-                    cur.execute("SELECT id, username, email, enabled FROM users")
+                    cur.execute("SELECT id_usuario, username, correo, enabled FROM users")
                 for row in cur.fetchall():
                     enabled = row[3]
                     enabled_label = "Habilitado" if enabled else "Deshabilitado"
@@ -265,7 +300,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/admin/roles":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.respond(403, "No autorizado")
                 return
             db = sqlite3.connect(settings.DB_PATH)
@@ -301,6 +336,24 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self.respond(200, "ok")
             return
+        elif self.path.startswith("/tipos_prenda"):
+            # Endpoint para tipos_prenda dependientes de prenda
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(self.path)
+            query_params = parse_qs(parsed.query)
+            id_prenda = query_params.get('id_prenda', [''])[0]
+            if not id_prenda:
+                self.respond(400, json.dumps({"error": "id_prenda requerido"}), content_type="application/json")
+                return
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                cur.execute("SELECT id_tipo_prenda, nombre FROM tipo_prenda WHERE id_tipo_prenda IN (SELECT id_tipo_prenda FROM prenda WHERE id_prenda = ?)", (int(id_prenda),))
+                tipos = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+            finally:
+                db.close()
+            self.respond(200, json.dumps(tipos), content_type="application/json")
+            return
         else:
             self.respond(404, "Not Found")
 
@@ -321,7 +374,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/reauthenticate":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
                 return
             password = params.get("password", [""])[0]
@@ -336,12 +389,21 @@ class Handler(BaseHTTPRequestHandler):
             username = params.get("username", [""])[0]   #usar 'username'
             email = params.get("email", [""])[0]
             password = params.get("password", [""])[0]
-            ok, msg = auth.create_user(username, email, password)
+            first_name = params.get("first_name", [""])[0]
+            middle_name = params.get("middle_name", [""])[0]
+            last_name = params.get("last_name", [""])[0]
+            second_last_name = params.get("second_last_name", [""])[0]
+            address1 = params.get("address1", [""])[0]
+            address2 = params.get("address2", [""])[0]
+            phone1 = params.get("phone1", [""])[0]
+            phone2 = params.get("phone2", [""])[0]
+            id_tipo_documento = params.get("id_tipo_documento", ["1"])[0]
+            ok, msg = auth.create_user(username, email, password, first_name, middle_name, last_name, second_last_name, address1, address2, phone1, phone2, int(id_tipo_documento) if id_tipo_documento else 1)
             if ok:
                 self.redirect("/dashboard")
             else:
                 error_message_div = f'<div id="error-message" class="alert alert-danger" role="alert">{msg}</div>' if msg else ''
-                self.respond(400, render_template("forms.html", error_message=msg, error_message_div=error_message_div, username=username, email=email))
+                self.respond(400, render_template("login.html", error_message=msg, error_message_div=error_message_div, username=username, email=email))
 
         # 🔹 Login de usuario
         elif self.path == "/login":
@@ -350,7 +412,7 @@ class Handler(BaseHTTPRequestHandler):
             ok, msg, token, remaining = auth.login(email, password, client_ip)
             if not ok:
                 # Mostrar mensaje de error e intentos restantes en la misma página de login
-                error_message_div = f'<div id="error-message" class="alert alert-danger" role="alert">{msg}</div>' if msg else ''
+                error_message_div = f'<div id="error-message" class="alert alert-danger" role="alert" style="border: 2px solid #dc3545; padding: 10px; margin-top: 10px;">{msg}</div>' if msg else ''
                 self.respond(403, render_template("login.html", error_message_div=error_message_div, email=email))
                 return
             # Redirigir a 2fa.html con el token y mensaje
@@ -371,7 +433,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/admin/disable_user":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.redirect("/")
                 return
             raw_user_id = params.get("user_id", ["0"])[0]
@@ -389,12 +451,12 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 cur = db.cursor()
                 # Leer el estado actual
-                cur.execute("SELECT enabled FROM users WHERE id = ?", (user_id,))
+                cur.execute("SELECT enabled FROM users WHERE id_usuario = ?", (user_id,))
                 row = cur.fetchone()
                 if row is not None:
                     current_enabled = row[0]
                     new_enabled = 0 if current_enabled else 1
-                    cur.execute("UPDATE users SET enabled = ? WHERE id = ?", (new_enabled, user_id))
+                    cur.execute("UPDATE users SET enabled = ? WHERE id_usuario = ?", (new_enabled, user_id))
                     db.commit()
             finally:
                 db.close()
@@ -407,7 +469,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/admin/set_role":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.respond(403, "No autorizado")
                 return
             raw_user_id = params.get("user_id", ["0"])[0]
@@ -431,6 +493,13 @@ class Handler(BaseHTTPRequestHandler):
                 cur.execute("DELETE FROM user_roles WHERE user_id = ?", (user_id,))
                 # Asignar nuevo rol
                 cur.execute("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", (user_id, role_id))
+                # Obtener el nombre del rol para actualizar el campo 'rol' en users
+                cur.execute("SELECT role_name FROM roles WHERE id = ?", (role_id,))
+                role_row = cur.fetchone()
+                if role_row:
+                    role_name = role_row[0]
+                    # Actualizar el campo 'rol' en users
+                    cur.execute("UPDATE users SET rol = ? WHERE id_usuario = ?", (role_name, user_id))
                 db.commit()
             finally:
                 db.close()
@@ -439,14 +508,24 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/admin/create_user":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
                 return
             username = params.get("username", [""])[0]
             email = params.get("email", [""])[0]
             password = params.get("password", [""])[0]
+            first_name = params.get("first_name", [""])[0]
+            middle_name = params.get("middle_name", [""])[0]
+            last_name = params.get("last_name", [""])[0]
+            second_last_name = params.get("second_last_name", [""])[0]
+            id_tipo_documento = params.get("id_tipo_documento", ["1"])[0]
+            documento = params.get("documento", [""])[0]
+            address1 = params.get("address1", [""])[0]
+            address2 = params.get("address2", [""])[0]
+            phone1 = params.get("phone1", [""])[0]
+            phone2 = params.get("phone2", [""])[0]
             from . import users
-            ok, msg = users.create_user(username, email, password)
+            ok, msg = users.create_user(username, email, password, first_name, middle_name, last_name, second_last_name, address1, address2, phone1, phone2, int(id_tipo_documento) if id_tipo_documento else 1, documento)
             if ok:
                 self.respond(200, json.dumps({"ok": True}), content_type="application/json")
             else:
@@ -455,7 +534,7 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/admin/update_user":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
                 return
             user_id = int(params.get("user_id", [0])[0])
@@ -471,26 +550,20 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/admin/search_user":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
-            if not ok or "admin" not in session_data.get("roles", []):
+            if not ok or "administrator" not in session_data.get("roles", []):
                 self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
                 return
-            print("DEBUG SEARCH POST: Params =", params)
             username = params.get("username", [""])[0]
-            print("DEBUG SEARCH POST: Username =", repr(username))
             db = sqlite3.connect(settings.DB_PATH)
             try:
                 cur = db.cursor()
                 if username:
-                    print("DEBUG SEARCH POST: Executing query for username =", repr(username))
-                    cur.execute("SELECT id, username, email, enabled FROM users WHERE username LIKE ?", (f"%{username}%",))
+                    cur.execute("SELECT id_usuario, username, correo, enabled FROM users WHERE username LIKE ?", (f"%{username}%",))
                 else:
-                    print("DEBUG SEARCH POST: Executing query for all users")
-                    cur.execute("SELECT id, username, email, enabled FROM users")
+                    cur.execute("SELECT id_usuario, username, correo, enabled FROM users")
                 rows = cur.fetchall()
-                print("DEBUG SEARCH POST: Rows =", rows)
                 users = []
                 for row in rows:
-                    print(f"DEBUG SEARCH_USER: Usuario encontrado - ID: {row[0]}, Username: '{row[1]}', Email: '{row[2]}', Enabled: {row[3]}")
                     enabled = row[3]
                     enabled_label = "Habilitado" if enabled else "Deshabilitado"
                     enabled_class = "success" if enabled else "danger"
@@ -516,10 +589,50 @@ class Handler(BaseHTTPRequestHandler):
                         "role_id": role_id
                     }
                     users.append(user_data)
-                print(f"DEBUG SEARCH_USER: Usuarios a enviar: {users}")
             finally:
                 db.close()
             self.respond(200, json.dumps({"ok": True, "users": users}), content_type="application/json")
+            return
+        elif self.path == "/crear_prenda":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok:
+                self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                return
+            nombre = params.get("nombre", [""])[0]
+            descripcion = params.get("descripcion", [""])[0]
+            id_prenda = params.get("id_prenda", [""])[0]
+            id_tipo_prenda = params.get("id_tipo_prenda", [""])[0]
+            id_tela = params.get("id_tela", [""])[0]
+            id_estilo = params.get("id_estilo", [""])[0]
+            id_molde = params.get("id_molde", [""])[0]
+            # Estado por defecto, por ejemplo, "En proceso" o similar
+            id_estado = 1  # Asumiendo que 1 es "En proceso" o el estado inicial
+            if not all([nombre, id_prenda, id_tipo_prenda, id_tela, id_estilo, id_molde]):
+                self.respond(400, json.dumps({"ok": False, "msg": "Todos los campos son obligatorios"}), content_type="application/json")
+                return
+            user_id = session_data["user_id"]
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                # Obtener id_cliente del usuario
+                cur.execute("SELECT id_cliente FROM usuario WHERE id_usuario = ?", (user_id,))
+                row = cur.fetchone()
+                if not row:
+                    self.respond(400, json.dumps({"ok": False, "msg": "Usuario no encontrado"}), content_type="application/json")
+                    return
+                id_cliente = row[0]
+                cur.execute("""
+                    INSERT INTO producto (descripcion, id_prenda, id_estilo, id_molde, id_tela, id_estado, id_cliente, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                """, (descripcion, int(id_prenda), int(id_estilo), int(id_molde), int(id_tela), id_estado, id_cliente))
+                db.commit()
+            except sqlite3.IntegrityError as e:
+                self.respond(400, json.dumps({"ok": False, "msg": f"Error de integridad: {str(e)}"}), content_type="application/json")
+                return
+            finally:
+                db.close()
+            self.respond(200, json.dumps({"ok": True, "msg": "Prenda creada exitosamente"}), content_type="application/json")
             return
         else:
             self.respond(404, "Not Found")
@@ -542,24 +655,25 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def respond(self, code, body, content_type="text/html"):
-        """Envía una respuesta HTTP con el código, cuerpo y tipo de contenido."""
-        if isinstance(body, str):
-            body = body.encode("utf-8")
-        self.send_response(code)
-        self.send_header("Content-Type", content_type + "; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        """Envía una respuesta HTTP con el código, cuerpo y tipo de contenido, manejando conexiones abortadas."""
+        try:
+            if isinstance(body, str):
+                body = body.encode("utf-8")
+            self.send_response(code)
+            self.send_header("Content-Type", content_type + "; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            # Enviar en chunks para respuestas grandes
+            chunk_size = 8192
+            for i in range(0, len(body), chunk_size):
+                self.wfile.write(body[i:i+chunk_size])
+        except (ConnectionAbortedError, BrokenPipeError):
+            # Cliente cerró la conexión, ignorar para no romper el servidor
+            pass
 
 
 def run():
-    """Inicia el servidor HTTP(S) y lo deja escuchando hasta que se detenga."""
-    print(f"DEBUG: ROOT_DIR calculado: {ROOT_DIR}")
-    print(f"DEBUG: BASE_DIR desde settings: {settings.BASE_DIR}")
-    print(f"DEBUG: DB_PATH: {settings.DB_PATH}")
-    print(f"DEBUG: ACCESS_LOG: {settings.ACCESS_LOG}")
     os.chdir(os.path.dirname(__file__))
-    print(f"DEBUG: Cambiado cwd a: {os.getcwd()}")
 
     use_tls = False  # Force HTTP for development to avoid cert issues
     port = settings.PORT  # Use HTTP port 8080

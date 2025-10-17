@@ -193,10 +193,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const email = document.getElementById('createEmail').value;
       const password = document.getElementById('createPassword').value;
       const confirmPassword = document.getElementById('createConfirmPassword').value;
+      const first_name = document.getElementById('createFirstName').value;
+      const middle_name = document.getElementById('createMiddleName').value;
+      const last_name = document.getElementById('createLastName').value;
+      const second_last_name = document.getElementById('createSecondLastName').value;
+      const id_tipo_documento = document.getElementById('createIdTipoDocumento').value;
+      const documento = document.getElementById('createDocumento').value;
+      const address1 = document.getElementById('createAddress1').value;
+      const address2 = document.getElementById('createAddress2').value;
+      const phone1 = document.getElementById('createPhone1').value;
+      const phone2 = document.getElementById('createPhone2').value;
       const errorDiv = document.getElementById('createUserError');
 
-      if (!username || !email || !password || !confirmPassword) {
-        errorDiv.textContent = 'Todos los campos son obligatorios.';
+      if (!username || !email || !password || !confirmPassword || !first_name || !last_name || !id_tipo_documento || !documento || !address1 || !phone1) {
+        errorDiv.textContent = 'Todos los campos obligatorios deben ser completados.';
         errorDiv.style.display = 'block';
         return;
       }
@@ -207,10 +217,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const formData = new URLSearchParams();
+      formData.append('username', username);
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('first_name', first_name);
+      formData.append('middle_name', middle_name);
+      formData.append('last_name', last_name);
+      formData.append('second_last_name', second_last_name);
+      formData.append('id_tipo_documento', id_tipo_documento);
+      formData.append('documento', documento);
+      formData.append('address1', address1);
+      formData.append('address2', address2);
+      formData.append('phone1', phone1);
+      formData.append('phone2', phone2);
+
       fetch('/admin/create_user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-        body: 'username=' + encodeURIComponent(username) + '&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(password)
+        body: formData.toString()
       })
       .then(r => r.json())
       .then(data => {
@@ -251,7 +276,62 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.ok) {
           const modal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
           modal.hide();
-          refreshUsersTable();
+          // Refrescar tabla de búsqueda si está visible, sino la tabla principal
+          const resultsDiv = document.getElementById('search-results');
+          if (!resultsDiv.classList.contains('d-none')) {
+            // Refrescar resultados de búsqueda
+            const searchInput = document.getElementById('search-username');
+            const usernameQuery = searchInput.value.trim();
+            if (usernameQuery) {
+              const resultsBody = document.getElementById('search-results-body');
+              const noResults = document.getElementById('search-no-results');
+              resultsBody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Actualizando...</td></tr>';
+              resultsDiv.classList.remove('d-none');
+              noResults.classList.add('d-none');
+
+              fetch('/admin/search_user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: 'username=' + encodeURIComponent(usernameQuery)
+              })
+              .then(r => r.json())
+              .then(data => {
+                resultsBody.innerHTML = '';
+                if (data.ok && data.users && data.users.length > 0) {
+                  data.users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                      <td>${user.id}</td>
+                      <td>${user.username}</td>
+                      <td>${user.email}</td>
+                      <td>
+                        <form method="POST" action="/admin/disable_user" style="display:inline;">
+                          <input type="hidden" name="user_id" value="${user.id}">
+                          <button type="submit" class="btn btn-sm ${user.enabled_btn_class}">${user.enabled_btn_text}</button>
+                        </form>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm role-select" data-user-id="${user.id}" data-current-role="${user.role_id}" aria-label="Seleccionar rol de usuario"></select>
+                      </td>
+                      <td>
+                        <button type="button" class="btn btn-sm btn-primary edit-user-btn" data-user-id="${user.id}" data-username="${user.username}" data-email="${user.email}">Editar</button>
+                      </td>
+                    `;
+                    resultsBody.appendChild(row);
+                  });
+                  loadRolesAndPopulate();
+                  // Refrescar también la tabla principal de usuarios
+                  refreshUsersTable();
+                } else {
+                  noResults.classList.remove('d-none');
+                  // Refrescar también la tabla principal de usuarios
+                  refreshUsersTable();
+                }
+              });
+            }
+          } else {
+            refreshUsersTable();
+          }
         } else {
           errorDiv.textContent = data.msg || 'Error al actualizar usuario';
           errorDiv.style.display = 'block';
@@ -260,10 +340,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Interceptar deshabilitar usuario
+  // Interceptar deshabilitar usuario en tabla principal
   const usuariosSection = document.getElementById('usuarios');
   if (usuariosSection) {
     usuariosSection.addEventListener('submit', (e) => {
+      if (e.target.matches('form[action="/admin/disable_user"]')) {
+        e.preventDefault();
+        const userId = parseInt(e.target.querySelector('input[name="user_id"]').value);
+        if (userId === currentAdminId) {
+          const errorDiv = document.getElementById('user-management-error');
+          errorDiv.textContent = 'No puedes deshabilitarte a ti mismo.';
+          errorDiv.classList.remove('d-none');
+          setTimeout(() => errorDiv.classList.add('d-none'), 5000);
+          return;
+        }
+        showReauthModal('disable', userId, null, e.target);
+      }
+    });
+  }
+
+  // Interceptar deshabilitar usuario en resultados de búsqueda
+  const searchResultsBody = document.getElementById('search-results-body');
+  if (searchResultsBody) {
+    searchResultsBody.addEventListener('submit', (e) => {
       if (e.target.matches('form[action="/admin/disable_user"]')) {
         e.preventDefault();
         const userId = parseInt(e.target.querySelector('input[name="user_id"]').value);
@@ -334,7 +433,60 @@ document.addEventListener('DOMContentLoaded', () => {
               method: 'POST',
               headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
               body: 'user_id=' + encodeURIComponent(reauthUserId)
-            }).then(() => refreshUsersTable());
+            }).then(() => {
+              // Refrescar tabla de búsqueda si está visible, sino la tabla principal
+              const resultsDiv = document.getElementById('search-results');
+              if (!resultsDiv.classList.contains('d-none')) {
+                // Refrescar resultados de búsqueda
+                const searchInput = document.getElementById('search-username');
+                const usernameQuery = searchInput.value.trim();
+                if (usernameQuery) {
+                  const resultsBody = document.getElementById('search-results-body');
+                  const noResults = document.getElementById('search-no-results');
+                  resultsBody.innerHTML = '<tr><td colspan="6" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Actualizando...</td></tr>';
+                  resultsDiv.classList.remove('d-none');
+                  noResults.classList.add('d-none');
+
+                  fetch('/admin/search_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: 'username=' + encodeURIComponent(usernameQuery)
+                  })
+                  .then(r => r.json())
+                  .then(data => {
+                    resultsBody.innerHTML = '';
+                    if (data.ok && data.users && data.users.length > 0) {
+                      data.users.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                          <td>${user.id}</td>
+                          <td>${user.username}</td>
+                          <td>${user.email}</td>
+                          <td>
+                            <form method="POST" action="/admin/disable_user" style="display:inline;">
+                              <input type="hidden" name="user_id" value="${user.id}">
+                              <button type="submit" class="btn btn-sm ${user.enabled_btn_class}">${user.enabled_btn_text}</button>
+                            </form>
+                          </td>
+                          <td>
+                            <select class="form-select form-select-sm role-select" data-user-id="${user.id}" data-current-role="${user.role_id}" aria-label="Seleccionar rol de usuario"></select>
+                          </td>
+                          <td>
+                            <button type="button" class="btn btn-sm btn-primary edit-user-btn" data-user-id="${user.id}" data-username="${user.username}" data-email="${user.email}">Editar</button>
+                          </td>
+                        `;
+                        resultsBody.appendChild(row);
+                      });
+                      loadRolesAndPopulate();
+                    } else {
+                      noResults.classList.remove('d-none');
+                    }
+                  });
+                }
+              } else {
+                refreshUsersTable();
+              }
+            });
           } else if (reauthAction === 'role' && reauthTarget) {
             fetch('/admin/set_role', {
               method: 'POST',
