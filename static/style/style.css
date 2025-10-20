@@ -147,6 +147,37 @@ button {
   transition: all 0.3s;
 }
 
+/* ===== CONTENEDOR DE CONTRASEÑA ===== */
+/* Contenedor relativo para campos de contraseña con botón toggle */
+.password-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Ajuste de padding derecho para inputs en contenedor de contraseña */
+.password-container input {
+  padding-right: 40px;
+}
+
+/* Estilo para el botón toggle de mostrar/ocultar contraseña */
+.password-container .toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #a82d2d;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Cambia el fondo a negro y color a blanco en hover, con escala de 1.05 */
 button:hover {
   background-color: rgb(0, 0, 0);

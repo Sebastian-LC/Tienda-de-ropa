@@ -3,7 +3,7 @@ import sqlite3
 import time
 from datetime import datetime, timedelta
 from config import settings
-from .utils import gen_salt, hash_password, verify_password, gen_2fa_code, send_email, now
+from .utils import gen_salt, hash_password, verify_password, gen_2fa_code, send_email, now, build_reset_email
 from .validation import validate_password, validate_email, validate_required
 from .audit import log_db_action, log_access_attempt
 import os
@@ -391,3 +391,90 @@ def reauthenticate(user_id, password_attempt):
         return verify_password(password_attempt, None, phash)
     finally:
         db.close()
+
+def generate_reset_token(user_id):
+    """Genera un token único para reset de contraseña y lo guarda en la DB."""
+    token = os.urandom(32).hex()
+    expires_at = datetime.utcnow() + timedelta(minutes=30)
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        cur.execute("INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+                    (user_id, token, expires_at.isoformat()))
+        db.commit()
+        return token
+    finally:
+        db.close()
+
+def verify_reset_token(token):
+    """Verifica si un token de reset es válido y no expirado. Retorna user_id si válido."""
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        cur.execute("SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ? AND used = 0", (token,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        user_id, expires_at_str, used = row
+        expires_at = datetime.fromisoformat(expires_at_str)
+        if datetime.utcnow() > expires_at:
+            return None
+        return user_id
+    finally:
+        db.close()
+
+def reset_user_password(token, new_password):
+    """Cambia la contraseña del usuario usando el token de reset."""
+    user_id = verify_reset_token(token)
+    if not user_id:
+        return False, "Token inválido o expirado."
+
+    # Validar nueva contraseña
+    ok, msg = validate_password(new_password)
+    if not ok:
+        return False, msg
+
+    # Generar nuevo hash
+    salt = gen_salt()
+    phash = hash_password(new_password, salt)
+    stored_hash = f"{salt}:{phash}"
+
+    db = sqlite3.connect(settings.DB_PATH)
+    try:
+        cur = db.cursor()
+        # Actualizar contraseña
+        cur.execute("UPDATE users SET contraseña = ? WHERE id_usuario = ?", (stored_hash, user_id))
+        # Marcar token como usado
+        cur.execute("UPDATE password_reset_tokens SET used = 1 WHERE token = ?", (token,))
+        db.commit()
+        log_db_action(user_id, "PASSWORD_RESET")
+        return True, "Contraseña cambiada exitosamente."
+    finally:
+        db.close()
+
+def request_password_reset(email):
+    """Inicia el proceso de reset de contraseña enviando email si el usuario existe."""
+    user = find_user_by_email(email)
+    if not user:
+        # No revelar si el email existe o no por seguridad
+        return True, "Si el correo existe, se ha enviado un enlace de recuperación."
+
+    user_id, username, email_addr, _, _, _, enabled = user
+    if not enabled:
+        return True, "Si el correo existe, se ha enviado un enlace de recuperación."
+
+    # Generar token
+    token = generate_reset_token(user_id)
+
+    # Enviar email
+    import threading
+    def send_reset_email():
+        try:
+            html_msg = build_reset_email(token)
+            send_email(email_addr, "Recuperar contraseña - JAANSTYLE", html_msg, html=True)
+        except Exception as e:
+            with open(settings.ACCESS_LOG, "a", encoding="utf-8") as f:
+                f.write(f"{now()} | RESET_EMAIL_FAILED for user:{user_id} ({e})\n")
+
+    threading.Thread(target=send_reset_email).start()
+    return True, "Se ha enviado un enlace de recuperación a tu correo."

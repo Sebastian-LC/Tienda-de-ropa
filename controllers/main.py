@@ -318,6 +318,25 @@ class Handler(BaseHTTPRequestHandler):
             session = self.get_session()
             auth.logout(session)
             self.redirect("/")
+        elif self.path.startswith("/reset-password"):
+            # GET: Mostrar formulario de reset si token válido, o forgot si no hay token
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(self.path)
+            query_params = parse_qs(parsed.query)
+            token = query_params.get('token', [''])[0]
+
+            if token:
+                # Verificar token
+                user_id = auth.verify_reset_token(token)
+                if user_id:
+                    self.respond(200, render_template("reset_password.html", token=token, error_message_div="", success_message_div=""))
+                else:
+                    self.respond(400, render_template("reset_password.html", token="", error_message_div='<div class="alert alert-danger">Token inválido o expirado</div>', success_message_div=""))
+            else:
+                # Mostrar formulario de solicitud de email
+                message_div = ""
+                self.respond(200, render_template("forgot_password.html", message_div=message_div))
+            return
         elif self.path == "/session_remaining":
             session_id = self.get_session()
             ok, session_data = auth.require_session(session_id)
@@ -633,6 +652,28 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 db.close()
             self.respond(200, json.dumps({"ok": True, "msg": "Prenda creada exitosamente"}), content_type="application/json")
+            return
+        elif self.path == "/reset-password":
+            # POST: Procesar reset de contraseña o solicitud de email
+            token = params.get("token", [""])[0]
+            if token:
+                # Procesar nueva contraseña
+                new_password = params.get("password", [""])[0]
+                confirm_password = params.get("password2", [""])[0]  # Cambiado a password2
+                if new_password != confirm_password:
+                    self.respond(400, render_template("reset_password.html", error_message_div='<div class="alert alert-danger">Las contraseñas no coinciden</div>', success_message_div="", token=token))
+                    return
+                ok, msg = auth.reset_user_password(token, new_password)
+                if ok:
+                    self.respond(200, render_template("reset_password.html", success_message_div='<div class="alert alert-success">Contraseña cambiada exitosamente.</div>', error_message_div="", token=""))
+                else:
+                    self.respond(400, render_template("reset_password.html", error_message_div=f'<div class="alert alert-danger">{msg}</div>', success_message_div="", token=token))
+            else:
+                # Solicitar reset por email
+                email = params.get("email", [""])[0]
+                ok, msg = auth.request_password_reset(email)
+                message_div = f'<div class="alert alert-info">{msg}</div>' if msg else ""
+                self.respond(200, render_template("forgot_password.html", message_div=message_div))
             return
         else:
             self.respond(404, "Not Found")

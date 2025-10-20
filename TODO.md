@@ -1,45 +1,35 @@
-# TODO: Mostrar informes de productos creados por el usuario en dashboard_user.html
+# TODO: Implementar Sistema de Recuperación de Contraseña
 
-## Pasos a completar:
-- El servidor se inicia correctamente con ambos comandos.
-- Los comandos son:
-  - `python -m controllers.main` (desde cualquier directorio)
-  - `powershell -Command "cd Tienda-de-ropa-Cambio-de-estructura; python -m controllers.main"`
-- Los correos no se envían en el segundo caso.
-- Rutas calculadas: ROOT_DIR y BASE_DIR son absolutas y deberían ser iguales.
-- Envío de correos usa SMTP fijo, sin dependencias de rutas.
+## Información Recopilada
+- El sistema actual tiene páginas `forgot_password.html` y `reset_password.html`.
+- Hay una tabla `password_reset_tokens` definida en `add_password_reset_tokens.sql`.
+- La función `send_email` en `utils.py` está configurada para enviar emails reales via SMTP.
+- El enlace en `login.html` actualmente apunta a `/forgot-password`.
+- Se requiere expiración de 30 minutos para los tokens.
+- Validaciones de contraseña existentes se mantendrán.
 
-## Plan de diagnóstico
-- [x] Añadir prints de debug en run() para mostrar ROOT_DIR, BASE_DIR, DB_PATH, ACCESS_LOG y cwd.
-- [x] Añadir prints detallados en send_email para rastrear el proceso de envío.
-- [ ] Ejecutar el servidor en el entorno problemático con el comando alternativo.
-- [ ] Intentar login para enviar correo y capturar la salida de consola.
-- [ ] Revisar logs/access_attempts.log para errores SMTP.
-- [ ] Verificar que el directorio raíz tenga el mismo nombre en ambos entornos.
-- [ ] Verificar conectividad a smtp.gmail.com:587 en el entorno problemático.
-- [ ] Si falla, probar cambiar SMTP_PORT a 465 y usar SSL en lugar de starttls.
+## Plan
+1. Cambiar el enlace en `views/login.html` de `/forgot-password` a `/reset-password`.
+2. Agregar funciones en `controllers/auth.py`:
+   - `generate_reset_token(user_id)`: Genera y guarda token de reset.
+   - `verify_reset_token(token)`: Verifica si token es válido y no expirado.
+   - `reset_user_password(token, new_password)`: Actualiza contraseña usando token.
+3. Agregar ruta `/reset-password` en `controllers/main.py` que maneje:
+   - GET sin token: Mostrar página de solicitud de email (`forgot_password.html`).
+   - POST sin token: Enviar email con enlace de reset.
+   - GET con token: Mostrar página de reset (`reset_password.html`).
+   - POST con token: Cambiar contraseña.
+4. Agregar función `build_reset_email(token)` en `controllers/utils.py` para construir el HTML del email.
+5. Asegurar que la tabla `password_reset_tokens` esté creada ejecutando el SQL si es necesario.
 
-## Posibles causas
-1. Diferencia en el nombre del directorio raíz causando rutas incorrectas (aunque absolutas).
-2. Firewall o red bloqueando SMTP en el entorno con cd.
-3. Credenciales SMTP incorrectas o expiradas.
-4. Gmail bloqueando el envío por seguridad.
+## Dependencias
+- Requiere que la tabla `password_reset_tokens` exista en la DB.
+- Usa `send_email` de `utils.py` para enviar el email con el enlace.
 
-## Cambios en UI
-- [x] Modificar login.html para que los botones de mostrar/ocultar contraseña estén dentro de los campos de contraseña a la derecha.
-- [x] Añadir CSS para posicionar los botones correctamente.
-
-## Siguientes pasos
-- Ejecutar en entorno problemático y reportar salida.
-- Si SMTP falla, intentar con puerto 465 y server.starttls() -> server.login() sin starttls.
-
-
-## funciones
-- crud de los que falta crear excepto los usuarios
-- que estos crud de estas tablas se relacionen 
-- que dentro de la pagina de usuario se comunque con estas tablas
-- crear tablas que falta como tela por ejemplo
-- que funcione la seccion de crear prenda al completo y muestre un resumen de lo seleccionado previamente
-- importante no meterse con lo que es compras y pagos
-- fecha limite hasta el 22 para tener todo esto
-- con mi compañero crear las tablas transaccionales para las tablas previas 
+## Seguimiento de Progreso
+- [x] Cambiar enlace en `views/login.html`.
+- [x] Agregar funciones en `controllers/auth.py`.
+- [x] Agregar ruta `/reset-password` en `controllers/main.py`.
+- [x] Agregar `build_reset_email` en `controllers/utils.py`.
+- [x] Ejecutar SQL para crear tabla `password_reset_tokens` si no existe.
+- [x] Probar el flujo completo.
