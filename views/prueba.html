@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Diseño de Prenda — Redimensionado y Rotación</title>
+<style>
+  body {
+    font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f0f0f0;
+    height: 100vh;
+    margin: 0;
+  }
+
+  h2 { margin: 20px 0; }
+
+  #canvas-container {
+    position: relative;
+    background: #fff;
+    border: 2px solid #ccc;
+    width: 400px;
+    height: 500px;
+    overflow: hidden;
+  }
+
+  #baseImage {
+    width: 100%;
+    height: auto;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .overlay-container {
+    position: absolute;
+    top: 200px;
+    left: 150px;
+    width: 120px;
+    height: 120px;
+    transform-origin: center center;
+    cursor: move;
+  }
+
+  #overlay {
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    pointer-events: none;
+    display:block;
+    border-radius: 4px;
+  }
+
+  /* --- Controles --- */
+  .handle {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    transition: transform 0.1s ease;
+  }
+
+  .handle:hover {
+    transform: scale(1.15);
+  }
+
+  .handle.bottom-right {
+    bottom: -12px;
+    right: -12px;
+    background: #22c55e;
+  }
+  .handle.bottom-right::before {
+    content: "⤡";
+    font-size: 14px;
+  }
+
+  .handle.rotate {
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3b82f6;
+  }
+  .handle.rotate::before {
+    content: "⟳";
+    font-size: 15px;
+  }
+
+  input[type="file"] { margin-top: 15px; }
+</style>
+</head>
+<body>
+<h2>Editor interactivo de diseño sobre prenda</h2>
+
+<div id="canvas-container">
+  <img id="baseImage" draggable="false" src="../static/logo/camiseta1.png" alt="Camiseta base">
+  
+  <div class="overlay-container" id="overlayContainer">
+    <img id="overlay" draggable="false" src="https://i.imgur.com/Rd1nQvY.png" alt="Diseño">
+
+    <div class="handle bottom-right"></div>
+    <div class="handle rotate" title="Rotar"></div>
+  </div>
+</div>
+
+<input type="file" id="upload" accept="image/*">
+
+<script>
+const canvasContainer = document.getElementById('canvas-container');
+const container = document.getElementById('overlayContainer');
+const overlayImg = document.getElementById('overlay');
+const upload = document.getElementById('upload');
+
+overlayImg.addEventListener('dragstart', e => e.preventDefault());
+
+let isDragging = false;
+let isResizing = false;
+let isRotating = false;
+
+let startClientX = 0, startClientY = 0;
+let startW = 0, startH = 0;
+let startRotationDeg = 0;
+let rotationDeg = 0;
+let rotationOffset = 0;
+let startCenter = null;
+let startDistance = 0;
+let dragOffset = { x: 0, y: 0 };
+let aspectRatio = 1;
+
+const toRad = deg => deg * Math.PI / 180;
+const toDeg = rad => rad * 180 / Math.PI;
+
+function getCenter(rect) {
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  };
+}
+
+document.querySelectorAll('.handle').forEach(h => {
+  h.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const rect = container.getBoundingClientRect();
+    const parentRect = canvasContainer.getBoundingClientRect();
+
+    startClientX = e.clientX;
+    startClientY = e.clientY;
+    startW = container.offsetWidth;
+    startH = container.offsetHeight;
+
+    const cx = rect.left + rect.width / 2 - parentRect.left;
+    const cy = rect.top + rect.height / 2 - parentRect.top;
+    startCenter = { x: cx, y: cy };
+
+    if (h.classList.contains('rotate')) {
+      isRotating = true;
+      const startAngleMouse = Math.atan2(e.clientY - (cy + parentRect.top), e.clientX - (cx + parentRect.left));
+      rotationOffset = rotationDeg - toDeg(startAngleMouse);
+    } else if (h.classList.contains('bottom-right')) {
+      isResizing = true;
+      startDistance = Math.sqrt(
+        (e.clientX - (cx + parentRect.left)) ** 2 +
+        (e.clientY - (cy + parentRect.top)) ** 2
+      );
+    }
+  });
+});
+
+container.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('handle')) return;
+  e.preventDefault();
+  isDragging = true;
+  const parentRect = canvasContainer.getBoundingClientRect();
+  dragOffset.x = e.clientX - (container.offsetLeft + parentRect.left);
+  dragOffset.y = e.clientY - (container.offsetTop + parentRect.top);
+});
+
+window.addEventListener('mousemove', e => {
+  if (isDragging) {
+    const parentRect = canvasContainer.getBoundingClientRect();
+    const left = e.clientX - parentRect.left - dragOffset.x;
+    const top = e.clientY - parentRect.top - dragOffset.y;
+    container.style.left = `${left}px`;
+    container.style.top = `${top}px`;
+    return;
+  }
+
+  if (isResizing) {
+    const parentRect = canvasContainer.getBoundingClientRect();
+    const dx = e.clientX - (startCenter.x + parentRect.left);
+    const dy = e.clientY - (startCenter.y + parentRect.top);
+    const currentDistance = Math.sqrt(dx * dx + dy * dy);
+    const scale = currentDistance / startDistance;
+
+    const newW = startW * scale;
+    const newH = newW / aspectRatio;
+
+    const newLeft = startCenter.x - newW / 2;
+    const newTop = startCenter.y - newH / 2;
+
+    container.style.width = `${newW}px`;
+    container.style.height = `${newH}px`;
+    container.style.left = `${newLeft}px`;
+    container.style.top = `${newTop}px`;
+    container.style.transform = `rotate(${rotationDeg}deg)`;
+    return;
+  }
+
+  if (isRotating) {
+    const parentRect = canvasContainer.getBoundingClientRect();
+    const cx = startCenter.x + parentRect.left;
+    const cy = startCenter.y + parentRect.top;
+    const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+    rotationDeg = (toDeg(angle) + rotationOffset);
+    container.style.transform = `rotate(${rotationDeg}deg)`;
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  isDragging = false;
+  isResizing = false;
+  isRotating = false;
+});
+
+upload.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      overlayImg.src = img.src;
+
+      const parentRect = canvasContainer.getBoundingClientRect();
+      const maxW = parentRect.width * 0.6;
+      const maxH = parentRect.height * 0.6;
+      const aspect = img.width / img.height;
+
+      let w = maxW;
+      let h = w / aspect;
+      if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
+
+      const left = (parentRect.width - w) / 2;
+      const top = (parentRect.height - h) / 2;
+
+      container.style.width = `${w}px`;
+      container.style.height = `${h}px`;
+      container.style.left = `${left}px`;
+      container.style.top = `${top}px`;
+      container.style.transform = `rotate(0deg)`;
+
+      rotationDeg = 0;
+      aspectRatio = img.width / img.height;
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+</script>
+</body>
+</html>

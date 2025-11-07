@@ -4,25 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="../static/style/style.css" />
-    
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../static/style/dashboard_user.css" />
+
     <title>Dashboard - JAANSTYLE</title>
-
-    <!-- Conexión al CSS -->
-
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
 
     <!-- Librería de iconos -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-
-    <!-- Bootstrap JS (para el menú colapsable) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
   </head>
   <body>
@@ -37,8 +28,8 @@
     </a>
 
     <!-- Botón menú móvil -->
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
-            data-bs-target="#navbarNav" aria-controls="navbarNav" 
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarNav" aria-controls="navbarNav"
             aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -68,7 +59,7 @@
     </div>
   </div>
 </nav>
-    
+
 
 
     <!-- Contenido -->
@@ -85,83 +76,127 @@
         </p>
       </section>
 
-      
+
 
       <!-- Creación de Prenda -->
       <section id="creacion-prenda" class="p-3 rounded mb-3 d-none">
-        <h2>Creación de Prenda</h2>
-        <div id="prenda-error" class="alert alert-danger d-none" role="alert"></div>
-        <div id="prenda-success" class="alert alert-success d-none" role="alert"></div>
-        <form id="prenda-form">
-          <!-- Nombre -->
-          <div class="mb-3">
-            <label for="nombre" class="form-label">Nombre de la prenda</label>
-            <input type="text" id="nombre" name="nombre" class="form-control" required>
+        <h2>Personalización de Prenda</h2>
+        <div class="customization-container">
+          <!-- Panel de Selección General -->
+          <div class="selection-panel">
+            <h4>Selección General</h4>
+            <div class="form-group">
+              <label for="tipo-prenda">Tipo de prenda</label>
+              <select id="tipo-prenda" onchange="updatePreview()">
+                <option value="">Selecciona tipo</option>
+                <option value="Camiseta">Camiseta</option>
+                <option value="Blusa">Blusa</option>
+                <option value="Chaqueta">Chaqueta</option>
+                <option value="Pantalón">Pantalón</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="estilo-prenda">Estilo</label>
+              <select id="estilo-prenda" onchange="updatePreview()">
+                <option value="">Selecciona estilo</option>
+                <option value="Manga corta">Manga corta</option>
+                <option value="Manga larga">Manga larga</option>
+                <option value="Cuello redondo">Cuello redondo</option>
+                <option value="Cuello V">Cuello V</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="tela-prenda">Tela</label>
+              <select id="tela-prenda" onchange="updatePreview()">
+                <option value="">Selecciona tela</option>
+                <option value="Algodón">Algodón</option>
+                <option value="Lino">Lino</option>
+                <option value="Poliéster">Poliéster</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="color-prenda">Color</label>
+              <input type="color" id="color-prenda" value="#f8fbff" oninput="updatePreview()">
+            </div>
           </div>
 
-          <!-- Prenda -->
-          <div class="mb-3">
-            <label for="id_prenda" class="form-label">Prenda</label>
-            <select id="id_prenda" name="id_prenda" class="form-select" onchange="loadTiposPrenda(); updateSummary()" required>
-              <option value="">Selecciona una prenda</option>
-              <!-- loop prendas -->
-              <option value="{item.id}">{item.nombre}</option>
-              <!-- endloop -->
-            </select>
+          <!-- Panel de Modo de Personalización -->
+          <div class="mode-panel">
+            <h4>Modo de Personalización</h4>
+            <div class="mode-buttons">
+              <button  onclick="setMode('basico')">Básico</button>
+              <button  onclick="setMode('avanzado')">Avanzado</button>
+            </div>
+            <div id="mode-options" class="mode-options">
+              <!-- Opciones Básicas -->
+              <div id="basico-options">
+                <div class="form-group">
+                  <label for="talla-basica">Talla</label>
+                  <select id="talla-basica">
+                    <option value="">Selecciona talla</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Opciones Avanzadas -->
+              <div id="avanzado-options" style="display: none;">
+                <h5>Medidas (cm)</h5>
+                <div class="measurements">
+                  <div class="form-group">
+                    <label for="cuello">Contorno de cuello</label>
+                    <input type="number" id="cuello" min="30" max="50" step="0.5" placeholder="Ej: 40 cm ">
+                  </div>
+                  <div class="form-group">
+                    <label for="torax">Contorno de tórax</label>
+                    <input type="number" id="torax" min="80" max="120" step="0.5" placeholder="Ej: 98 cm ">
+                  </div>
+                  <div class="form-group">
+                    <label for="largo-total">Largo total</label>
+                    <input type="number" id="largo-total" min="60" max="90" step="0.5" placeholder="Ej: 72 cm ">
+                  </div>
+                  <div class="form-group">
+                    <label for="sisa">Contorno de sisa</label>
+                    <input type="number" id="sisa" min="40" max="60" step="0.5" placeholder="Ej: 46 cm ">
+                  </div>
+                  <div class="form-group">
+                    <label for="largo-manga">Largo de manga</label>
+                    <input type="number" id="largo-manga" min="50" max="70" step="0.5" placeholder="Ej: 58 cm ">
+                  </div>
+                  <div class="form-group">
+                    <label for="brazo">Contorno de brazo</label>
+                    <input type="number" id="brazo" min="25" max="40" step="0.5" placeholder="Ej: 34 cm ">
+                  </div>
+                  <div class="form-group">
+                    <label for="hombro">Ancho de hombro</label>
+                    <input type="number" id="hombro" min="35" max="50" step="0.5" placeholder="Ej: 44 cm ">
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Tipo de prenda -->
-          <div class="mb-3">
-            <label for="id_tipo_prenda" class="form-label">Tipo de prenda</label>
-            <select id="id_tipo_prenda" name="id_tipo_prenda" class="form-select" onchange="updateSummary()" required>
-              <option value="">Selecciona un tipo</option>
-            </select>
+          <!-- Vista Previa -->
+          <div class="preview-panel">
+            <h4>Vista Previa</h4>
+            <div class="preview-img">
+              <canvas id="prenda-canvas" width="500" height="500"></canvas>
+            </div>
           </div>
 
-          <!-- Tela -->
-          <div class="mb-3">
-            <label for="id_tela" class="form-label">Tela</label>
-            <select id="id_tela" name="id_tela" class="form-select" onchange="updateSummary()" required>
-              <option value="">Selecciona una tela</option>
-              <!-- loop telas -->
-              <option value="{item.id}">{item.nombre}</option>
-              <!-- endloop -->
-            </select>
+          <!-- Vista Previa JSON 
+          <div class="json-preview">
+            <h5>Vista Previa JSON</h5>
+            <pre id="json-output">{}</pre>
+          </div>-->
+
+          <!-- Acciones -->
+          <div class="actions">
+            <button id="guardar-diseno" onclick="guardarDiseno()">Guardar Diseño</button>
           </div>
-
-          <!-- Estilo -->
-          <div class="mb-3">
-            <label for="id_estilo" class="form-label">Estilo</label>
-            <select id="id_estilo" name="id_estilo" class="form-select" onchange="updateSummary()" required>
-              <option value="">Selecciona un estilo</option>
-              <!-- loop estilos -->
-              <option value="{item.id}">{item.nombre}</option>
-              <!-- endloop -->
-            </select>
-          </div>
-
-          <!-- Molde -->
-          <div class="mb-3">
-            <label for="id_molde" class="form-label">Molde</label>
-            <select id="id_molde" name="id_molde" class="form-select" onchange="updateSummary()" required>
-              <option value="">Selecciona un molde</option>
-              <!-- loop moldes -->
-              <option value="{item.id}">{item.nombre}</option>
-              <!-- endloop -->
-            </select>
-          </div>
-
-          <!-- Resumen -->
-          <div class="mb-3">
-            <label class="form-label">Resumen de la prenda</label>
-            <div id="prenda-summary" class="alert alert-info"></div>
-          </div>
-
-          <input type="hidden" id="descripcion" name="descripcion">
-
-          <!-- Botón -->
-          <button type="button" id="crear-prenda-btn">Crear Prenda</button>
-        </form>
+        </div>
       </section>
 
       <!-- Informes -->
@@ -253,55 +288,15 @@
     <!-- Footer -->
     <footer class="bg-dark text-center py-3">
       <div class="social">
-        <a href="#" class="text-light me-3">
+        <a href="#" class="text-light me-3">instagram
           <i class="fa-brands fa-instagram"></i>
         </a>
-        <a href="#" class="text-light">
+        <a href="#" class="text-light">facebook
           <i class="fa-brands fa-facebook"></i>
         </a>
       </div>
     </footer>
   <script src="/static/js/utils.js"></script>
-  <script src="/static/js/user-dashboard.js"></script>
-  <script>
-    function mostrarSeccion(seccionId) {
-      // Ocultar todas las secciones
-      const secciones = document.querySelectorAll('main section');
-      secciones.forEach(seccion => {
-        seccion.classList.add('d-none');
-      });
-      // Mostrar la sección seleccionada
-      const seccion = document.getElementById(seccionId);
-      if (seccion) {
-        seccion.classList.remove('d-none');
-      }
-    }
-
-    const estilos = {
-      'Camiseta': ['Manga larga', 'Manga corta', 'Sin mangas'],
-      'Pantalón': ['Largo', 'Corto', 'Capri'],
-      'Chaqueta': ['Con capucha', 'Sin capucha', 'Bomber'],
-      'Sudadera': ['Con capucha', 'Sin capucha', 'Oversize']
-    };
-
-    function updateEstiloPrenda() {
-      const tipo = document.getElementById('tipo-prenda').value;
-      const div = document.getElementById('estilo-prenda-div');
-      const select = document.getElementById('estilo-prenda');
-      if (tipo === '') {
-        div.style.display = 'none';
-        select.innerHTML = '';
-      } else {
-        div.style.display = 'block';
-        select.innerHTML = '<option value="">Selecciona un estilo</option>';
-        estilos[tipo].forEach(estilo => {
-          const option = document.createElement('option');
-          option.value = estilo;
-          option.textContent = estilo;
-          select.appendChild(option);
-        });
-      }
-    }
-  </script>
+  <script src="/static/js/dashboard_user.js"></script>
   </body>
 </html>
