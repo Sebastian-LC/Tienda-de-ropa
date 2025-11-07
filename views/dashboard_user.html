@@ -181,9 +181,18 @@
           <!-- Vista Previa -->
           <div class="preview-panel">
             <h4>Vista Previa</h4>
-            <div class="preview-img">
+            <div id="canvas-container" class="preview-img">
               <canvas id="prenda-canvas" width="500" height="500"></canvas>
+              <div class="interactive-area" id="interactiveArea">
+                <div class="overlay-container" id="overlayContainer">
+                  <img id="overlay" draggable="false" src="#" alt="Diseño">
+                  <div class="handle bottom-right"></div>
+                  <div class="handle rotate" title="Rotar"></div>
+                </div>
+              </div>
             </div>
+            <label for="upload" style="margin-top: 15px;">Subir imagen de diseño:</label>
+            <input type="file" id="upload" accept="image/*" style="margin-top: 5px;">
           </div>
 
           <!-- Vista Previa JSON 

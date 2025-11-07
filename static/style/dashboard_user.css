@@ -26,11 +26,84 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  background: #fff;
+  border: 2px solid #ccc;
+  overflow: hidden;
 }
-#prenda-img {
+#baseImage {
+  width: 100%;
+  height: auto;
+  user-select: none;
+  pointer-events: none;
+}
+.interactive-area {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  pointer-events: none;
+}
+
+.overlay-container {
+  position: absolute;
+  top: 200px;
+  left: 150px;
+  width: 120px;
+  height: 120px;
+  transform-origin: center center;
+  cursor: move;
+  pointer-events: auto;
+}
+#overlay {
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  pointer-events: none;
+  display: block;
+  border-radius: 4px;
+}
+/* --- Controles --- */
+.handle {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  transition: transform 0.1s ease;
+}
+
+.interactive-area:hover .handle {
+  display: flex;
+}
+.handle:hover {
+  transform: scale(1.15);
+}
+.handle.bottom-right {
+  bottom: -12px;
+  right: -12px;
+  background: #800020;
+}
+.handle.bottom-right::before {
+  content: "⤡";
+  font-size: 14px;
+}
+.handle.rotate {
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #800020;
+}
+.handle.rotate::before {
+  content: "⟳";
+  font-size: 15px;
 }
 .mode-buttons {
   display: flex;

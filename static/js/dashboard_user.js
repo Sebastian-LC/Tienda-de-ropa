@@ -2,6 +2,166 @@ let currentMode = 'basico';
 let canvas, ctx, img;
 let updatePreviewTimeout;
 
+// Variables para el editor interactivo
+const canvasContainer = document.getElementById('canvas-container');
+let overlayImg = null;
+const upload = document.getElementById('upload');
+const overlay = document.getElementById('overlay');
+const overlayContainer = document.getElementById('overlayContainer');
+const interactiveArea = document.getElementById('interactiveArea');
+
+let isDragging = false;
+let isResizing = false;
+let isRotating = false;
+
+let startClientX = 0, startClientY = 0;
+let startW = 0, startH = 0;
+let startRotationDeg = 0;
+let overlayRotation = 0;
+let rotationOffset = 0;
+let startCenter = null;
+let startDistance = 0;
+let dragOffset = { x: 0, y: 0 };
+let aspectRatio = 1;
+
+let overlayX = 200, overlayY = 200, overlayW = 120, overlayH = 120;
+
+const toRad = deg => deg * Math.PI / 180;
+const toDeg = rad => rad * 180 / Math.PI;
+
+function getCenter(rect) {
+  return {
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2
+  };
+}
+
+document.querySelectorAll('.handle').forEach(h => {
+  h.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const rect = overlayContainer.getBoundingClientRect();
+    const parentRect = interactiveArea.getBoundingClientRect();
+
+    startClientX = e.clientX;
+    startClientY = e.clientY;
+    startW = overlayContainer.offsetWidth;
+    startH = overlayContainer.offsetHeight;
+
+    const cx = rect.left + rect.width / 2 - parentRect.left;
+    const cy = rect.top + rect.height / 2 - parentRect.top;
+    startCenter = { x: cx, y: cy };
+
+    if (h.classList.contains('rotate')) {
+      isRotating = true;
+      const startAngleMouse = Math.atan2(e.clientY - (cy + parentRect.top), e.clientX - (cx + parentRect.left));
+      rotationOffset = overlayRotation - toDeg(startAngleMouse);
+    } else if (h.classList.contains('bottom-right')) {
+      isResizing = true;
+      startDistance = Math.sqrt(
+        (e.clientX - (cx + parentRect.left)) ** 2 +
+        (e.clientY - (cy + parentRect.top)) ** 2
+      );
+    }
+  });
+});
+
+overlayContainer.addEventListener('mousedown', e => {
+  if (e.target.classList.contains('handle')) return;
+  e.preventDefault();
+  isDragging = true;
+  const parentRect = interactiveArea.getBoundingClientRect();
+  dragOffset.x = e.clientX - (overlayContainer.offsetLeft + parentRect.left);
+  dragOffset.y = e.clientY - (overlayContainer.offsetTop + parentRect.top);
+});
+
+window.addEventListener('mousemove', e => {
+  if (isDragging) {
+    const parentRect = interactiveArea.getBoundingClientRect();
+    const left = e.clientX - parentRect.left - dragOffset.x;
+    const top = e.clientY - parentRect.top - dragOffset.y;
+    overlayContainer.style.left = `${left}px`;
+    overlayContainer.style.top = `${top}px`;
+    return;
+  }
+
+  if (isResizing) {
+    const parentRect = interactiveArea.getBoundingClientRect();
+    const dx = e.clientX - (startCenter.x + parentRect.left);
+    const dy = e.clientY - (startCenter.y + parentRect.top);
+    const currentDistance = Math.sqrt(dx * dx + dy * dy);
+    const scale = currentDistance / startDistance;
+
+    const newW = startW * scale;
+    const newH = newW / aspectRatio;
+
+    const newLeft = startCenter.x - newW / 2;
+    const newTop = startCenter.y - newH / 2;
+
+    overlayContainer.style.width = `${newW}px`;
+    overlayContainer.style.height = `${newH}px`;
+    overlayContainer.style.left = `${newLeft}px`;
+    overlayContainer.style.top = `${newTop}px`;
+    overlayContainer.style.transform = `rotate(${overlayRotation}deg)`;
+    return;
+  }
+
+  if (isRotating) {
+    const parentRect = interactiveArea.getBoundingClientRect();
+    const cx = startCenter.x + parentRect.left;
+    const cy = startCenter.y + parentRect.top;
+    const angle = Math.atan2(e.clientY - cy, e.clientX - cx);
+    overlayRotation = (toDeg(angle) + rotationOffset);
+    overlayContainer.style.transform = `rotate(${overlayRotation}deg)`;
+  }
+});
+
+window.addEventListener('mouseup', () => {
+  isDragging = false;
+  isResizing = false;
+  isRotating = false;
+});
+
+upload.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    overlayImg = new Image();
+    overlayImg.onload = () => {
+      overlay.src = overlayImg.src;
+
+      const parentRect = interactiveArea.getBoundingClientRect();
+      const maxW = parentRect.width * 0.6;
+      const maxH = parentRect.height * 0.6;
+      const aspect = overlayImg.width / overlayImg.height;
+
+      let w = maxW;
+      let h = w / aspect;
+      if (h > maxH) {
+        h = maxH;
+        w = h * aspect;
+      }
+
+      const left = (parentRect.width - w) / 2;
+      const top = (parentRect.height - h) / 2;
+
+      overlayContainer.style.width = `${w}px`;
+      overlayContainer.style.height = `${h}px`;
+      overlayContainer.style.left = `${left}px`;
+      overlayContainer.style.top = `${top}px`;
+      overlayContainer.style.transform = `rotate(0deg)`;
+
+      overlayRotation = 0;
+      aspectRatio = overlayImg.width / overlayImg.height;
+    };
+    overlayImg.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
 function doUpdatePreview() {
   const tipo = document.getElementById('tipo-prenda')?.value || '';
   const estilo = document.getElementById('estilo-prenda')?.value || '';
@@ -110,6 +270,42 @@ function pintarCamiseta(color) {
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
   ctx.globalCompositeOperation = 'source-over';
+
+
+}
+
+function aplicarMascaraPrenda() {
+  if (!canvas || !ctx || !img) return;
+
+  // Crear un path que siga el contorno de la prenda (simplificado)
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-in';
+
+  // Dibujar la forma de la prenda como máscara
+  ctx.beginPath();
+  // Cuello
+  ctx.ellipse(200, 80, 40, 30, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cuerpo
+  ctx.beginPath();
+  ctx.moveTo(160, 110);
+  ctx.lineTo(240, 110);
+  ctx.lineTo(250, 200);
+  ctx.lineTo(150, 200);
+  ctx.closePath();
+  ctx.fill();
+
+  // Mangas
+  ctx.beginPath();
+  ctx.ellipse(140, 140, 20, 40, Math.PI / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.ellipse(260, 140, 20, 40, Math.PI / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
 }
 
 function updatePreviewSize() {
