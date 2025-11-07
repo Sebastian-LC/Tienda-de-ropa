@@ -156,6 +156,9 @@ upload.addEventListener('change', e => {
 
       overlayRotation = 0;
       aspectRatio = overlayImg.width / overlayImg.height;
+
+      // Habilitar la interacción después de subir la imagen
+      overlayContainer.classList.remove('disabled');
     };
     overlayImg.src = reader.result;
   };
@@ -202,9 +205,29 @@ function doUpdatePreview() {
     };
   }
 
-  const jsonOutput = document.getElementById('json-output');
-  if (jsonOutput) {
-    jsonOutput.textContent = JSON.stringify(data, null, 2);
+  const summaryOutput = document.getElementById('summary-output');
+  if (summaryOutput) {
+    let summaryHTML = '<ul class="summary-list">';
+    summaryHTML += `<li><strong>Tipo de prenda:</strong> ${data.tipo || 'No seleccionado'}</li>`;
+    summaryHTML += `<li><strong>Estilo:</strong> ${data.estilo || 'No seleccionado'}</li>`;
+    summaryHTML += `<li><strong>Tela:</strong> ${data.tela || 'No seleccionado'}</li>`;
+    summaryHTML += `<li><strong>Color:</strong> <span style="display:inline-block;width:20px;height:20px;background-color:${data.color};border:1px solid #000;"></span> ${data.color}</li>`;
+    summaryHTML += `<li><strong>Modo:</strong> ${data.modo === 'basico' ? 'Básico' : 'Avanzado'}</li>`;
+    if (data.modo === 'basico') {
+      summaryHTML += `<li><strong>Talla:</strong> ${data.talla || 'No seleccionado'}</li>`;
+    } else {
+      summaryHTML += '<li><strong>Medidas personalizadas:</strong></li><ul>';
+      summaryHTML += `<li>Contorno de cuello: ${data.medidas.cuello || 0} cm</li>`;
+      summaryHTML += `<li>Contorno de tórax: ${data.medidas.torax || 0} cm</li>`;
+      summaryHTML += `<li>Largo total: ${data.medidas.largoTotal || 0} cm</li>`;
+      summaryHTML += `<li>Contorno de sisa: ${data.medidas.sisa || 0} cm</li>`;
+      summaryHTML += `<li>Largo de manga: ${data.medidas.largoManga || 0} cm</li>`;
+      summaryHTML += `<li>Contorno de brazo: ${data.medidas.brazo || 0} cm</li>`;
+      summaryHTML += `<li>Ancho de hombro: ${data.medidas.hombro || 0} cm</li>`;
+      summaryHTML += '</ul>';
+    }
+    summaryHTML += '</ul>';
+    summaryOutput.innerHTML = summaryHTML;
   }
 }
 
@@ -342,6 +365,14 @@ function autoResizeInput(input) {
 // user-dashboard.js - Validaciones específicas para dashboard de usuario (prenda y consulta)
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Agregar event listener al botón de subir imagen
+  const uploadBtn = document.getElementById('upload-btn');
+  const uploadInput = document.getElementById('upload');
+  if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener('click', () => {
+      uploadInput.click();
+    });
+  }
   // Inicializar preview
   canvas = document.getElementById('prenda-canvas') || document.getElementById('canvas');
   if (canvas) {
@@ -377,8 +408,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Auto-resize inputs numéricos
-  const numberInputs = document.querySelectorAll('input[type="number"]');
+  // Auto-resize inputs numéricos, excepto en avanzado-options
+  const numberInputs = document.querySelectorAll('input[type="number"]:not(#avanzado-options input[type="number"])');
   numberInputs.forEach(input => {
     autoResizeInput(input);
     input.addEventListener('input', () => autoResizeInput(input));

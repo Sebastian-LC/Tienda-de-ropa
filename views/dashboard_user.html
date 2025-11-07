@@ -118,6 +118,10 @@
               <label for="color-prenda">Color</label>
               <input type="color" id="color-prenda" value="#f8fbff" oninput="updatePreview()">
             </div>
+            <div class="form-group">
+              <button type="button" id="upload-btn">Subir imagen de diseño</button>
+              <input type="file" id="upload" accept="image/*" style="display: none;">
+            </div>
           </div>
 
           <!-- Panel de Modo de Personalización -->
@@ -184,15 +188,20 @@
             <div id="canvas-container" class="preview-img">
               <canvas id="prenda-canvas" width="500" height="500"></canvas>
               <div class="interactive-area" id="interactiveArea">
-                <div class="overlay-container" id="overlayContainer">
-                  <img id="overlay" draggable="false" src="#" alt="Diseño">
+                <div class="overlay-container disabled" id="overlayContainer">
+                  <img id="overlay" draggable="false"  alt="">
                   <div class="handle bottom-right"></div>
                   <div class="handle rotate" title="Rotar"></div>
                 </div>
               </div>
             </div>
-            <label for="upload" style="margin-top: 15px;">Subir imagen de diseño:</label>
-            <input type="file" id="upload" accept="image/*" style="margin-top: 5px;">
+
+          </div>
+
+          <!-- Resumen de Personalización -->
+          <div class="summary-panel">
+            <h5>Resumen de Personalización</h5>
+            <div id="summary-output"></div>
           </div>
 
           <!-- Vista Previa JSON 
