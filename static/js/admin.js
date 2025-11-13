@@ -529,23 +529,202 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Validación de gestión de catálogo
-  const catalogoForm = document.getElementById('catalogo-form');
-  if (catalogoForm) {
-    catalogoForm.addEventListener('submit', (e) => {
-      const tela = document.getElementById('tela').value.trim();
-      const color = document.getElementById('color').value.trim();
-      const estampado = document.getElementById('estampado').value.trim();
-      const errorDiv = document.getElementById('catalogo-error');
-      let errorMsg = '';
-      if (!tela) errorMsg = 'El campo Tela es obligatorio.';
-      else if (!color) errorMsg = 'El campo Color es obligatorio.';
-      else if (!estampado) errorMsg = 'El campo Estampado es obligatorio.';
-      if (errorMsg) {
-        e.preventDefault();
-        errorDiv.textContent = errorMsg;
-        errorDiv.classList.remove('d-none');
+  // Gestión del catálogo con pestañas y modales
+  function loadCatalogData(type) {
+    const tableBody = document.getElementById(`${type}-table-body`);
+    if (!tableBody) return;
+
+    const colspan = type === 'color' || type === 'tela' || type === 'estilo' || type === 'molde' ? 5 : 4;
+    tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando...</td></tr>`;
+
+    fetch(`/api/catalog/${type}`)
+      .then(r => r.json())
+      .then(data => {
+        tableBody.innerHTML = '';
+        if (data.ok && data.items && data.items.length > 0) {
+          data.items.forEach(item => {
+            const row = document.createElement('tr');
+            let cols = `<td>${item.id}</td><td>${item.nombre}</td>`;
+            if (type === 'tela') {
+              cols += `<td>${item.material || ''}</td><td>${item.descripcion || ''}</td>`;
+            } else if (type === 'color') {
+              cols += `<td><div style="width: 20px; height: 20px; background-color: ${item.hex_code}; border: 1px solid #000;"></div> ${item.hex_code}</td><td>${item.descripcion || ''}</td>`;
+            } else if (type === 'prenda') {
+              cols += `<td>${item.descripcion || ''}</td>`;
+            } else if (type === 'estilo') {
+              cols += `<td>${item.prenda || ''}</td><td>${item.descripcion || ''}</td>`;
+            } else if (type === 'molde') {
+              cols += `<td>${item.talla || ''}</td><td>${item.descripcion || ''}</td>`;
+            }
+            cols += `<td>
+              <button class="btn btn-sm btn-warning" onclick="editCatalogItem('${type}', ${item.id}, '${item.nombre}', '${item.descripcion || ''}', '${item.hex_code || ''}', '${item.material || ''}', '${item.prenda || ''}', '${item.talla || ''}')">Editar</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteCatalogItem('${type}', ${item.id})">Eliminar</button>
+            </td>`;
+            row.innerHTML = cols;
+            tableBody.appendChild(row);
+          });
+        } else {
+          tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center">No hay datos disponibles.</td></tr>`;
+        }
+      })
+      .catch(error => {
+        console.error('Error cargando catálogo:', error);
+        tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-danger">Error al cargar datos.</td></tr>`;
+      });
+  }
+
+  // Función para mostrar modal de agregar/editar
+  window.showAddModal = function(type) {
+    document.getElementById('catalogType').value = type;
+    document.getElementById('catalogId').value = '';
+    document.getElementById('catalogNombre').value = '';
+    document.getElementById('catalogDescripcion').value = '';
+    document.getElementById('catalogHex').value = '#000000';
+    document.getElementById('catalogTalla').value = '';
+    document.getElementById('catalogMaterial').value = '';
+    document.getElementById('catalogPrenda').value = '';
+    document.getElementById('catalogModalLabel').textContent = `Agregar ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    // Mostrar/ocultar campos según el tipo
+    document.getElementById('catalogDescDiv').style.display = (type === 'color') ? 'none' : 'block';
+    document.getElementById('catalogHexDiv').style.display = (type === 'color') ? 'block' : 'none';
+    document.getElementById('catalogTallaDiv').style.display = (type === 'molde') ? 'block' : 'none';
+    document.getElementById('catalogMaterialDiv').style.display = (type === 'tela') ? 'block' : 'none';
+    document.getElementById('catalogPrendaDiv').style.display = (type === 'estilo') ? 'block' : 'none';
+    document.getElementById('catalogError').style.display = 'none';
+    const modal = new bootstrap.Modal(document.getElementById('catalogModal'));
+    modal.show();
+  };
+
+  // Función para editar elemento
+  window.editCatalogItem = function(type, id, nombre, descripcion, hex, material, prenda, talla) {
+    document.getElementById('catalogType').value = type;
+    document.getElementById('catalogId').value = id;
+    document.getElementById('catalogNombre').value = nombre;
+    document.getElementById('catalogDescripcion').value = descripcion || '';
+    document.getElementById('catalogHex').value = hex || '#000000';
+    document.getElementById('catalogTalla').value = talla || '';
+    document.getElementById('catalogMaterial').value = material || '';
+    document.getElementById('catalogPrenda').value = prenda || '';
+    document.getElementById('catalogModalLabel').textContent = `Editar ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    // Mostrar/ocultar campos según el tipo
+    document.getElementById('catalogDescDiv').style.display = (type === 'color') ? 'none' : 'block';
+    document.getElementById('catalogHexDiv').style.display = (type === 'color') ? 'block' : 'none';
+    document.getElementById('catalogTallaDiv').style.display = (type === 'molde') ? 'block' : 'none';
+    document.getElementById('catalogMaterialDiv').style.display = (type === 'tela') ? 'block' : 'none';
+    document.getElementById('catalogPrendaDiv').style.display = (type === 'estilo') ? 'block' : 'none';
+    document.getElementById('catalogError').style.display = 'none';
+    const modal = new bootstrap.Modal(document.getElementById('catalogModal'));
+    modal.show();
+  };
+
+  // Función para eliminar elemento
+  window.deleteCatalogItem = function(type, id) {
+    if (confirm('¿Estás seguro de que deseas eliminar este elemento?')) {
+      fetch(`/api/catalog/${type}/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            loadCatalogData(type);
+          } else {
+            alert('Error al eliminar: ' + (data.msg || 'Error desconocido'));
+          }
+        })
+        .catch(error => {
+          console.error('Error eliminando:', error);
+          alert('Error al eliminar elemento.');
+        });
+    }
+  };
+
+  // Confirmar guardar en modal de catálogo
+  const catalogConfirmBtn = document.getElementById('catalogConfirmBtn');
+  if (catalogConfirmBtn) {
+    catalogConfirmBtn.addEventListener('click', () => {
+      const type = document.getElementById('catalogType').value;
+      const id = document.getElementById('catalogId').value;
+      const nombre = document.getElementById('catalogNombre').value.trim();
+      const descripcion = document.getElementById('catalogDescripcion').value.trim();
+      const hex = document.getElementById('catalogHex').value;
+      const talla = document.getElementById('catalogTalla').value.trim();
+      const material = document.getElementById('catalogMaterial').value.trim();
+      const prenda = document.getElementById('catalogPrenda').value.trim();
+      const errorDiv = document.getElementById('catalogError');
+
+      if (!nombre) {
+        errorDiv.textContent = 'El nombre es obligatorio.';
+        errorDiv.style.display = 'block';
+        return;
       }
+
+      const formData = new URLSearchParams();
+      formData.append('nombre', nombre);
+      if (descripcion) formData.append('descripcion', descripcion);
+      if (type === 'color' && hex) formData.append('hex_code', hex);
+      if (type === 'molde' && talla) formData.append('talla', talla);
+      if (type === 'tela' && material) formData.append('material', material);
+      if (type === 'estilo' && prenda) formData.append('prenda', prenda);
+
+      const url = id ? `/api/catalog/${type}/${id}` : `/api/catalog/${type}`;
+      const method = id ? 'PUT' : 'POST';
+
+      fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData.toString()
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          const modal = bootstrap.Modal.getInstance(document.getElementById('catalogModal'));
+          modal.hide();
+          loadCatalogData(type);
+        } else {
+          errorDiv.textContent = data.msg || 'Error al guardar';
+          errorDiv.style.display = 'block';
+        }
+      })
+      .catch(error => {
+        console.error('Error guardando:', error);
+        errorDiv.textContent = 'Error de conexión';
+        errorDiv.style.display = 'block';
+      });
     });
+  }
+
+  // Gestión de pestañas personalizadas del catálogo
+  const catalogoTabs = document.querySelectorAll('#catalogo-tabs .custom-tab');
+  const catalogoPanes = document.querySelectorAll('#catalogo-tab-content .custom-tab-pane');
+
+  function switchTab(target) {
+    // Remover active de todas las pestañas
+    catalogoTabs.forEach(tab => tab.classList.remove('active'));
+    // Agregar active a la pestaña seleccionada
+    const activeTab = document.querySelector(`#catalogo-tabs .custom-tab[data-target="${target}"]`);
+    if (activeTab) activeTab.classList.add('active');
+
+    // Ocultar todos los panes
+    catalogoPanes.forEach(pane => pane.classList.remove('active'));
+    // Mostrar el pane seleccionado
+    const activePane = document.getElementById(target);
+    if (activePane) activePane.classList.add('active');
+
+    // Cargar datos del tipo correspondiente
+    const type = target.replace('-panel', '');
+    loadCatalogData(type);
+  }
+
+  // Event listeners para pestañas
+  catalogoTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.getAttribute('data-target');
+      switchTab(target);
+    });
+  });
+
+  // Cargar datos iniciales de la pestaña activa
+  const initialActiveTab = document.querySelector('#catalogo-tabs .custom-tab.active');
+  if (initialActiveTab) {
+    const target = initialActiveTab.getAttribute('data-target');
+    switchTab(target);
   }
 });

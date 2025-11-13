@@ -188,10 +188,25 @@ button:hover {
 .btn-primary {
   background: #007bff;
   color: #ffffff;
+  margin-right: 0.5rem;
 }
 
 .btn-primary:hover {
   background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  margin-right: 0.5rem;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+#search-user-btn, #clear-search-btn {
+  margin-right: 0.5rem;
 }
 
 .btn-success {
@@ -400,4 +415,60 @@ footer {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #580000;
+}
+
+/* ===== NAV TABS ===== */
+.nav-tabs {
+  border-bottom: none;
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  border-radius: 0;
+  background-color: #800020;
+  color: white;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: #600018;
+  border-color: #600018;
+}
+
+/* ===== CUSTOM TABS ===== */
+.custom-tabs {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.custom-tab {
+  background: #580000;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+  margin-right: 0.5rem;
+}
+
+.custom-tab:hover {
+  background: #800020;
+}
+
+.custom-tab.active {
+  background: #2b0000;
+  border-bottom: 2px solid #e91e63;
+}
+
+.custom-tab-content {
+  /* No additional styles needed */
+}
+
+.custom-tab-pane {
+  display: none;
+}
+
+.custom-tab-pane.active {
+  display: block;
 }

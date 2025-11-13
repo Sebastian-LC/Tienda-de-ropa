@@ -1,17 +1,52 @@
 .customization-container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 20px;
-  max-width: 1200px;
+  max-width: 2000px;
   margin: 0 auto;
 }
-.selection-panel, .mode-panel {
+.selection-general-panel {
   background: #f8f9fa;
   padding: 15px;
   border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
+.selection-general-panel .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+.mode-personalizacion-panel {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mode-personalizacion-panel .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+.mode-options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.mode-options .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+  flex: 1;
+  min-width: 200px;
+}
+
 .preview-panel {
-  grid-column: span 2;
+  width: 100%;
   text-align: center;
   background: #ffffff;
   padding: 20px;
@@ -127,11 +162,16 @@
 }
 .mode-options {
   margin-top: 15px;
+  margin-bottom: 20px;
 }
 .measurements {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+}
+.measurements .form-group input {
+  width: 100%;
+  max-width: none;
 }
 .form-group {
   margin-bottom: 10px;
@@ -157,7 +197,7 @@
   height: 50px;
 }
 .json-preview {
-  grid-column: span 2;
+  width: 100%;
   background: #e9ecef;
   padding: 15px;
   border-radius: 5px;
@@ -172,7 +212,7 @@
   border: 1px solid #ccc;
 }
 .summary-panel {
-  grid-column: span 2;
+  grid-column: span 3;
   background: #f8f9fa;
   padding: 15px;
   border-radius: 5px;
@@ -204,7 +244,7 @@
   font-size: 0.9em;
 }
 .actions {
-  grid-column: span 2;
+  grid-column: span 3;
   text-align: center;
   margin-top: 20px;
 }

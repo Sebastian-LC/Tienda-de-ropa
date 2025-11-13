@@ -373,6 +373,52 @@ class Handler(BaseHTTPRequestHandler):
                 db.close()
             self.respond(200, json.dumps(tipos), content_type="application/json")
             return
+        elif self.path == "/api/prendas":
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                cur.execute("SELECT id_prenda, nombre FROM prenda")
+                prendas = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+            finally:
+                db.close()
+            self.respond(200, json.dumps(prendas), content_type="application/json")
+            return
+        elif self.path.startswith("/api/catalog/"):
+            parts = self.path.split('/')
+            if len(parts) == 4:  # /api/catalog/type
+                _, _, _, type_ = parts
+                session_id = self.get_session()
+                ok, session_data = auth.require_session(session_id)
+                if not ok or "administrator" not in session_data.get("roles", []):
+                    self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                    return
+                db = sqlite3.connect(settings.DB_PATH)
+                try:
+                    cur = db.cursor()
+                    if type_ == 'color':
+                        cur.execute("SELECT id_color, nombre, hex_code FROM color")
+                        items = [{"id": r[0], "nombre": r[1], "hex_code": r[2]} for r in cur.fetchall()]
+                    elif type_ == 'tela':
+                        cur.execute("SELECT id_tela, nombre, descripcion FROM tela")
+                        items = [{"id": r[0], "nombre": r[1], "descripcion": r[2] or ""} for r in cur.fetchall()]
+                    elif type_ == 'estilo':
+                        cur.execute("SELECT e.id_estilo, e.nombre, e.descripcion, p.nombre FROM estilo e LEFT JOIN prenda p ON e.descripcion = p.id_prenda")
+                        items = [{"id": r[0], "nombre": r[1], "descripcion": r[2], "prenda_nombre": r[3] or ""} for r in cur.fetchall()]
+                    elif type_ == 'molde':
+                        cur.execute("SELECT id_molde, nombre, talla FROM molde")
+                        items = [{"id": r[0], "nombre": r[1], "talla": r[2] or ""} for r in cur.fetchall()]
+                    elif type_ == 'prenda':
+                        cur.execute("SELECT id_prenda, nombre FROM prenda")
+                        items = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                    else:
+                        self.respond(400, json.dumps({"ok": False, "msg": "Tipo inválido"}), content_type="application/json")
+                        return
+                finally:
+                    db.close()
+                self.respond(200, json.dumps({"ok": True, "items": items}), content_type="application/json")
+                return
+            else:
+                self.respond(404, "Not Found")
         else:
             self.respond(404, "Not Found")
 
@@ -653,6 +699,63 @@ class Handler(BaseHTTPRequestHandler):
                 db.close()
             self.respond(200, json.dumps({"ok": True, "msg": "Prenda creada exitosamente"}), content_type="application/json")
             return
+        elif self.path.startswith("/api/catalog/"):
+            parts = self.path.split('/')
+            if len(parts) == 4:  # /api/catalog/type
+                _, _, _, type_ = parts
+                session_id = self.get_session()
+                ok, session_data = auth.require_session(session_id)
+                if not ok or "administrator" not in session_data.get("roles", []):
+                    self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                    return
+                try:
+                    data = json.loads(body)
+                except json.JSONDecodeError:
+                    self.respond(400, json.dumps({"ok": False, "msg": "JSON inválido"}), content_type="application/json")
+                    return
+                db = sqlite3.connect(settings.DB_PATH)
+                try:
+                    cur = db.cursor()
+                    if type_ == 'color':
+                        nombre = data.get("nombre")
+                        hex_code = data.get("codigo_hex")
+                        if not nombre or not hex_code:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Nombre y codigo_hex requeridos"}), content_type="application/json")
+                            return
+                        cur.execute("INSERT INTO color (nombre, hex_code) VALUES (?, ?)", (nombre, hex_code))
+                    elif type_ == 'tela':
+                        nombre = data.get("nombre")
+                        material = data.get("material")
+                        if not nombre or not material:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Nombre y material requeridos"}), content_type="application/json")
+                            return
+                        cur.execute("INSERT INTO tela (nombre, descripcion) VALUES (?, ?)", (nombre, material))
+                    elif type_ == 'estilo':
+                        nombre = data.get("nombre")
+                        id_prenda = data.get("id_prenda")
+                        if not nombre or not id_prenda:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Nombre e id_prenda requeridos"}), content_type="application/json")
+                            return
+                        cur.execute("INSERT INTO estilo (nombre, descripcion) VALUES (?, ?)", (nombre, str(id_prenda)))
+                    elif type_ == 'molde':
+                        talla = data.get("talla")
+                        if not talla:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Talla requerida"}), content_type="application/json")
+                            return
+                        cur.execute("INSERT INTO molde (nombre, talla) VALUES (?, ?)", (talla, talla))
+                    else:
+                        self.respond(400, json.dumps({"ok": False, "msg": "Tipo inválido"}), content_type="application/json")
+                        return
+                    db.commit()
+                except sqlite3.IntegrityError as e:
+                    self.respond(400, json.dumps({"ok": False, "msg": f"Error de integridad: {str(e)}"}), content_type="application/json")
+                    return
+                finally:
+                    db.close()
+                self.respond(200, json.dumps({"ok": True, "msg": f"{type_} agregado exitosamente"}), content_type="application/json")
+                return
+            else:
+                self.respond(404, "Not Found")
         elif self.path == "/reset-password":
             # POST: Procesar reset de contraseña o solicitud de email
             token = params.get("token", [""])[0]
@@ -675,6 +778,116 @@ class Handler(BaseHTTPRequestHandler):
                 message_div = f'<div class="alert alert-info">{msg}</div>' if msg else ""
                 self.respond(200, render_template("forgot_password.html", message_div=message_div))
             return
+        else:
+            self.respond(404, "Not Found")
+
+    def do_PUT(self):
+        """Maneja las peticiones PUT: editar items del catálogo."""
+        length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(length).decode()
+        client_ip = self.client_address[0]
+
+        if self.path.startswith("/api/catalog/"):
+            parts = self.path.split('/')
+            if len(parts) == 5:  # /api/catalog/type/id
+                _, _, _, type_, id_ = parts
+                session_id = self.get_session()
+                ok, session_data = auth.require_session(session_id)
+                if not ok or "administrator" not in session_data.get("roles", []):
+                    self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                    return
+                try:
+                    data = json.loads(body)
+                except json.JSONDecodeError:
+                    self.respond(400, json.dumps({"ok": False, "msg": "JSON inválido"}), content_type="application/json")
+                    return
+                db = sqlite3.connect(settings.DB_PATH)
+                try:
+                    cur = db.cursor()
+                    if type_ == 'color':
+                        nombre = data.get("nombre")
+                        hex_code = data.get("codigo_hex")
+                        if not nombre or not hex_code:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Nombre y codigo_hex requeridos"}), content_type="application/json")
+                            return
+                        cur.execute("UPDATE color SET nombre = ?, hex_code = ? WHERE id_color = ?", (nombre, hex_code, int(id_)))
+                    elif type_ == 'tela':
+                        nombre = data.get("nombre")
+                        material = data.get("material")
+                        if not nombre or not material:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Nombre y material requeridos"}), content_type="application/json")
+                            return
+                        cur.execute("UPDATE tela SET nombre = ?, descripcion = ? WHERE id_tela = ?", (nombre, material, int(id_)))
+                    elif type_ == 'estilo':
+                        nombre = data.get("nombre")
+                        id_prenda = data.get("id_prenda")
+                        if not nombre or not id_prenda:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Nombre e id_prenda requeridos"}), content_type="application/json")
+                            return
+                        cur.execute("UPDATE estilo SET nombre = ?, descripcion = ? WHERE id_estilo = ?", (nombre, str(id_prenda), int(id_)))
+                    elif type_ == 'molde':
+                        talla = data.get("talla")
+                        if not talla:
+                            self.respond(400, json.dumps({"ok": False, "msg": "Talla requerida"}), content_type="application/json")
+                            return
+                        cur.execute("UPDATE molde SET nombre = ?, talla = ? WHERE id_molde = ?", (talla, talla, int(id_)))
+                    else:
+                        self.respond(400, json.dumps({"ok": False, "msg": "Tipo inválido"}), content_type="application/json")
+                        return
+                    if cur.rowcount == 0:
+                        self.respond(404, json.dumps({"ok": False, "msg": "Item no encontrado"}), content_type="application/json")
+                        return
+                    db.commit()
+                except sqlite3.IntegrityError as e:
+                    self.respond(400, json.dumps({"ok": False, "msg": f"Error de integridad: {str(e)}"}), content_type="application/json")
+                    return
+                finally:
+                    db.close()
+                self.respond(200, json.dumps({"ok": True, "msg": f"{type_} actualizado exitosamente"}), content_type="application/json")
+                return
+            else:
+                self.respond(404, "Not Found")
+        else:
+            self.respond(404, "Not Found")
+
+    def do_DELETE(self):
+        """Maneja las peticiones DELETE: eliminar items del catálogo."""
+        if self.path.startswith("/api/catalog/"):
+            parts = self.path.split('/')
+            if len(parts) == 5:  # /api/catalog/type/id
+                _, _, _, type_, id_ = parts
+                session_id = self.get_session()
+                ok, session_data = auth.require_session(session_id)
+                if not ok or "administrator" not in session_data.get("roles", []):
+                    self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                    return
+                db = sqlite3.connect(settings.DB_PATH)
+                try:
+                    cur = db.cursor()
+                    if type_ == 'color':
+                        cur.execute("DELETE FROM color WHERE id_color = ?", (int(id_),))
+                    elif type_ == 'tela':
+                        cur.execute("DELETE FROM tela WHERE id_tela = ?", (int(id_),))
+                    elif type_ == 'estilo':
+                        cur.execute("DELETE FROM estilo WHERE id_estilo = ?", (int(id_),))
+                    elif type_ == 'molde':
+                        cur.execute("DELETE FROM molde WHERE id_molde = ?", (int(id_),))
+                    else:
+                        self.respond(400, json.dumps({"ok": False, "msg": "Tipo inválido"}), content_type="application/json")
+                        return
+                    if cur.rowcount == 0:
+                        self.respond(404, json.dumps({"ok": False, "msg": "Item no encontrado"}), content_type="application/json")
+                        return
+                    db.commit()
+                except sqlite3.IntegrityError as e:
+                    self.respond(400, json.dumps({"ok": False, "msg": f"Error de integridad: {str(e)}"}), content_type="application/json")
+                    return
+                finally:
+                    db.close()
+                self.respond(200, json.dumps({"ok": True, "msg": f"{type_} eliminado exitosamente"}), content_type="application/json")
+                return
+            else:
+                self.respond(404, "Not Found")
         else:
             self.respond(404, "Not Found")
 

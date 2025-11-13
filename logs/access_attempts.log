@@ -417,3 +417,17 @@
 2025-10-31T03:18:36 | LOGIN duration: 0.48 seconds for user 1
 2025-10-31T21:01:22.224222 | ip:127.0.0.1 | user:1 | success:1
 2025-10-31T21:01:22 | LOGIN duration: 0.34 seconds for user 1
+2025-11-11T20:14:42.508948 | ip:127.0.0.1 | user:1 | success:1
+2025-11-11T20:14:42 | LOGIN duration: 0.86 seconds for user 1
+2025-11-11T23:47:22.447022 | ip:127.0.0.1 | user:1 | success:1
+2025-11-11T23:47:22 | LOGIN duration: 0.83 seconds for user 1
+2025-11-12T00:06:39.224155 | ip:127.0.0.1 | user:1 | success:1
+2025-11-12T00:06:39 | LOGIN duration: 0.81 seconds for user 1
+2025-11-12T00:06:39.855937 | ip:127.0.0.1 | user:1 | success:1
+2025-11-12T00:06:39 | LOGIN duration: 0.54 seconds for user 1
+2025-11-12T00:06:51.522689 | ip:127.0.0.1 | user:1 | success:0
+2025-11-12T00:07:05.455950 | ip:127.0.0.1 | user:1 | success:0
+2025-11-12T00:07:14.463964 | ip:127.0.0.1 | user:1 | success:1
+2025-11-12T00:07:14 | LOGIN duration: 0.21 seconds for user 1
+2025-11-13T03:15:30.250293 | ip:127.0.0.1 | user:1 | success:1
+2025-11-13T03:15:30 | LOGIN duration: 0.75 seconds for user 1

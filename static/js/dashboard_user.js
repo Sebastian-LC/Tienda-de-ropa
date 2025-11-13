@@ -248,18 +248,14 @@ function setMode(mode) {
   currentMode = mode;
   const basicoOptions = document.getElementById('basico-options');
   const avanzadoOptions = document.getElementById('avanzado-options');
-  const modeBtns = document.querySelectorAll('.mode-btn');
-
-  modeBtns.forEach(btn => btn.classList.remove('active'));
+  const modeSelect = document.getElementById('modo-personalizacion');
 
   if (mode === 'basico') {
     basicoOptions.style.display = 'block';
     avanzadoOptions.style.display = 'none';
-    document.querySelector('button[onclick="setMode(\'basico\')"]').classList.add('active');
   } else {
     basicoOptions.style.display = 'none';
     avanzadoOptions.style.display = 'block';
-    document.querySelector('button[onclick="setMode(\'avanzado\')"]').classList.add('active');
   }
   updatePreview();
 }
@@ -380,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
     img = document.getElementById('prenda-img') || new Image();
     if (!img.src) {
       img.crossOrigin = "anonymous";
-      img.src = "../static/logo/camiseta1.png"; // Imagen base con detalles
+      img.src = "../static/logo/imagenes_base/camiseta_m_corta.png"; // Imagen base con detalles
     }
 
     img.onload = () => {

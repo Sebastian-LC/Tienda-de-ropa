@@ -9,6 +9,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </head>
   <script src="/static/js/utils.js"></script>
   <script src="/static/js/session.js"></script>
@@ -32,7 +33,8 @@
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('usuarios')">Gestión de Usuarios <i class="fa fa-user-edit"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('busqueda')">Búsqueda <i class="fa fa-search"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('catalogo')">Gestión de Catálogo <i class="fa fa-cogs"></i></a></li>
-          <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('informes')">Informes <i class="fa fa-chart-bar"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('informes')">Informes <i class="fa fa-file-alt"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('Cerrar Sesion')">Cerrar Sesion <i class="fa fa-door-open"></i></a></li>
         </ul>
       </div>
     </div>
@@ -105,7 +107,7 @@
               <th>ID</th>
               <th>Usuario</th>
               <th>Email</th>
-              <th>Estado/Acción</th>
+              <th>Estado</th>
               <th>Rol</th>
               <th>Editar</th>
             </tr>
@@ -123,26 +125,127 @@
     <!-- Gestión del Catálogo -->
     <section id="catalogo" class="p-3 rounded mb-3 d-none">
       <h2>Gestión del Catálogo</h2>
-  <div id="catalogo-error" class="alert alert-danger d-none" role="alert"></div>
-  <form id="catalogo-form">
-        <!-- Tela -->
-        <div class="mb-3">
-          <label for="tela" class="form-label">Agregar/Editar Tela</label>
-          <input type="text" id="tela" class="form-control" placeholder="Ejemplo: Algodón">
+      <div id="catalogo-error" class="alert alert-danger d-none" role="alert"></div>
+
+      <!-- Pestañas para cada tabla -->
+      <div class="custom-tabs" id="catalogo-tabs">
+        <button class="custom-tab active" data-target="tela-panel">Tela</button>
+        <button class="custom-tab" data-target="color-panel">Color</button>
+        <button class="custom-tab" data-target="prenda-panel">Prenda</button>
+        <button class="custom-tab" data-target="estilo-panel">Estilo</button>
+        <button class="custom-tab" data-target="molde-panel">Molde</button>
+      </div>
+
+      <div class="custom-tab-content" id="catalogo-tab-content">
+        <!-- Panel Tela -->
+        <div class="custom-tab-pane active" id="tela-panel">
+          <div class="d-flex justify-content-between align-items-center my-3">
+            <h4>Telas</h4>
+            <button  onclick="showAddModal('tela')">Agregar Tela</button>
+          </div>
+          <table class="table table-bordered table-hover text-center align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Material</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tela-table-body">
+              <!-- Datos cargados dinámicamente -->
+            </tbody>
+          </table>
         </div>
-        <!-- Color -->
-        <div class="mb-3">
-          <label for="color" class="form-label">Agregar/Editar Color</label>
-          <input type="text" id="color" class="form-control" placeholder="Ejemplo: Azul Marino">
+
+        <!-- Panel Color -->
+        <div class="custom-tab-pane" id="color-panel">
+          <div class="d-flex justify-content-between align-items-center my-3">
+            <h4>Colores</h4>
+            <button  onclick="showAddModal('color')">Agregar Color</button>
+          </div>
+          <table class="table table-bordered table-hover text-center align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Código Hex</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="color-table-body">
+              <!-- Datos cargados dinámicamente -->
+            </tbody>
+          </table>
         </div>
-        <!-- Estampado -->
-        <div class="mb-3">
-          <label for="estampado" class="form-label">Agregar/Editar Estampado</label>
-          <input type="text" id="estampado" class="form-control" placeholder="Ejemplo: Logo, Rayas...">
+
+        <!-- Panel Prenda -->
+        <div class="custom-tab-pane" id="prenda-panel">
+          <div class="d-flex justify-content-between align-items-center my-3">
+            <h4>Prendas</h4>
+            <button  onclick="showAddModal('prenda')">Agregar Prenda</button>
+          </div>
+          <table class="table table-bordered table-hover text-center align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="prenda-table-body">
+              <!-- Datos cargados dinámicamente -->
+            </tbody>
+          </table>
         </div>
-        <!-- Botón -->
-  <button type="submit">Guardar Cambios</button>
-      </form>
+
+        <!-- Panel Estilo -->
+        <div class="custom-tab-pane" id="estilo-panel">
+          <div class="d-flex justify-content-between align-items-center my-3">
+            <h4>Estilos</h4>
+            <button  onclick="showAddModal('estilo')">Agregar Estilo</button>
+          </div>
+          <table class="table table-bordered table-hover text-center align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Prenda</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="estilo-table-body">
+              <!-- Datos cargados dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Panel Molde -->
+        <div class="custom-tab-pane" id="molde-panel">
+          <div class="d-flex justify-content-between align-items-center my-3">
+            <h4>Moldes</h4>
+            <button  onclick="showAddModal('molde')">Agregar Molde</button>
+          </div>
+          <table class="table table-bordered table-hover text-center align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Talla</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="molde-table-body">
+              <!-- Datos cargados dinámicamente -->
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
 
@@ -327,6 +430,55 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
         <button type="button" class="btn btn-primary" id="reauthConfirmBtn">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para agregar/editar elementos del catálogo -->
+<div class="modal fade" id="catalogModal" tabindex="-1" aria-labelledby="catalogModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="catalogModalLabel">Agregar/Editar Elemento</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <form id="catalogForm">
+          <input type="hidden" id="catalogType" value="">
+          <input type="hidden" id="catalogId" value="">
+          <div class="mb-3" id="catalogNombreDiv">
+            <label for="catalogNombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="catalogNombre" required>
+          </div>
+          <div class="mb-3" id="catalogDescDiv">
+            <label for="catalogDescripcion" class="form-label">Descripción</label>
+            <input type="text" class="form-control" id="catalogDescripcion">
+          </div>
+          <div class="mb-3" id="catalogHexDiv" style="display: none;">
+            <label for="catalogHex" class="form-label">Código Hex</label>
+            <input type="color" class="form-control" id="catalogHex" value="#000000">
+          </div>
+          <div class="mb-3" id="catalogTallaDiv" style="display: none;">
+            <label for="catalogTalla" class="form-label">Talla</label>
+            <input type="text" class="form-control" id="catalogTalla" required>
+          </div>
+          <div class="mb-3" id="catalogMaterialDiv" style="display: none;">
+            <label for="catalogMaterial" class="form-label">Material</label>
+            <input type="text" class="form-control" id="catalogMaterial" required>
+          </div>
+          <div class="mb-3" id="catalogPrendaDiv" style="display: none;">
+            <label for="catalogPrenda" class="form-label">Prenda</label>
+            <select class="form-control" id="catalogPrenda" required>
+              <option value="">Selecciona prenda</option>
+            </select>
+          </div>
+          <div id="catalogError" class="text-danger mt-2" style="display:none;"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button"  data-bs-dismiss="modal">Cancelar</button>
+        <button type="button"  id="catalogConfirmBtn">Guardar</button>
       </div>
     </div>
   </div>
