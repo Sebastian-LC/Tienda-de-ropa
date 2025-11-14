@@ -489,3 +489,7 @@
 2025-11-14T21:30:03 | LOGIN duration: 0.81 seconds for user 1
 2025-11-14T21:44:55.488165 | ip:127.0.0.1 | user:1 | success:1
 2025-11-14T21:44:55 | LOGIN duration: 0.49 seconds for user 1
+2025-11-14T21:53:33.938396 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T21:53:33 | LOGIN duration: 0.63 seconds for user 1
+2025-11-14T22:01:23.006976 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T22:01:23 | LOGIN duration: 0.35 seconds for user 1

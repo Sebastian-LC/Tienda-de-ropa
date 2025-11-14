@@ -404,12 +404,12 @@ class Handler(BaseHTTPRequestHandler):
                     elif type_ == 'estilo':
                         print("DEBUG: Entrando a GET /api/catalog/estilo")
                         try:
-                            cur.execute("SELECT te.id_tipo_estilo as id, te.nombre, te.descripcion, tp.nombre, tp.id_tipo_prenda FROM tipo_estilo te LEFT JOIN tipo_prenda tp ON CAST(te.descripcion AS INTEGER) = tp.id_tipo_prenda")
+                            cur.execute("SELECT te.id_tipo_estilo as id, te.nombre, te.descripcion, tp.nombre as prenda_nombre, te.id_tipo_prenda FROM tipo_estilo te LEFT JOIN tipo_prenda tp ON te.id_tipo_prenda = tp.id_tipo_prenda")
                             rows = cur.fetchall()
                             print(f"DEBUG: Filas obtenidas: {len(rows)}")
                             for row in rows:
                                 print(f"DEBUG: Row: {row}")
-                            items = [{"id": r[0], "nombre": r[1], "descripcion": r[2], "prenda_nombre": r[3] or "", "id_tipo_prenda": r[4]} for r in rows]
+                            items = [{"id": r[0], "nombre": r[1], "descripcion": r[2] or "", "prenda_nombre": r[3] or "", "id_tipo_prenda": r[4]} for r in rows]
                             print(f"DEBUG: Items procesados: {items}")
                         except Exception as e:
                             print(f"DEBUG: Error en consulta SQL: {e}")
@@ -757,7 +757,7 @@ class Handler(BaseHTTPRequestHandler):
                         if not nombre or not id_prenda:
                             self.respond(400, json.dumps({"ok": False, "msg": "Nombre e id_prenda requeridos"}), content_type="application/json")
                             return
-                        cur.execute("INSERT INTO tipo_estilo (nombre, descripcion) VALUES (?, ?)", (nombre, str(id_prenda)))
+                        cur.execute("INSERT INTO tipo_estilo (nombre, id_tipo_prenda) VALUES (?, ?)", (nombre, int(id_prenda)))
                     elif type_ == 'molde':
                         nombre = data.get("nombre")
                         descripcion = data.get("descripcion")
