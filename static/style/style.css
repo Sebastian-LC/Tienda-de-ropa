@@ -472,3 +472,8 @@ footer {
 .custom-tab-pane.active {
   display: block;
 }
+
+/* ===== OVERLAY IMAGE BORDER ===== */
+#overlay {
+  border: none;
+}

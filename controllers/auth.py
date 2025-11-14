@@ -1,4 +1,8 @@
 # app/auth.py
+# Este módulo maneja la autenticación de usuarios, incluyendo registro, login, 2FA,
+# gestión de sesiones, roles y recuperación de contraseñas.
+# Utiliza sesiones en memoria para simplicidad, pero en producción se recomienda Redis o similar.
+
 import sqlite3
 import time
 from datetime import datetime, timedelta
@@ -8,11 +12,32 @@ from .validation import validate_password, validate_email, validate_required
 from .audit import log_db_action, log_access_attempt
 import os
 
-# Sessions simple en memoria: session_id -> {user_id, expires_at, last_activity, roles, pending_2fa}
+# Sesiones simples en memoria: session_id -> {user_id, expires_at, last_activity, roles, pending_2fa}
+# Nota: En un entorno de producción, usar una base de datos o Redis para persistencia.
 SESSIONS = {}
 
 def create_user(username, email, password, first_name="", middle_name="", last_name="", second_last_name="", address1="", address2="", phone1="", phone2="", id_tipo_documento=1, numero_documento="") -> tuple[bool, str]:
-    """Crea un nuevo usuario con validaciones y rol por defecto, incluyendo datos adicionales en 'usuario'."""
+    """
+    Crea un nuevo usuario con validaciones y rol por defecto, incluyendo datos adicionales en 'usuario'.
+
+    Args:
+        username (str): Nombre de usuario único.
+        email (str): Correo electrónico único.
+        password (str): Contraseña en texto plano (se hashea antes de almacenar).
+        first_name (str): Primer nombre.
+        middle_name (str): Segundo nombre.
+        last_name (str): Apellido paterno.
+        second_last_name (str): Apellido materno.
+        address1 (str): Primera línea de dirección.
+        address2 (str): Segunda línea de dirección.
+        phone1 (str): Primer teléfono.
+        phone2 (str): Segundo teléfono.
+        id_tipo_documento (int): ID del tipo de documento.
+        numero_documento (str): Número del documento.
+
+    Returns:
+        tuple[bool, str]: (éxito, mensaje)
+    """
     print("==== DEBUG CREATE_USER ====")
     print("Username:", username)
     print("Email:", email)
@@ -85,7 +110,15 @@ def create_user(username, email, password, first_name="", middle_name="", last_n
 
 
 def find_user_by_email(email):
-    """Busca un usuario por email y retorna sus datos."""
+    """
+    Busca un usuario por email y retorna sus datos.
+
+    Args:
+        email (str): Correo electrónico del usuario.
+
+    Returns:
+        tuple or None: (id_usuario, username, correo, contraseña, failed_attempts, blocked, enabled) o None si no encontrado.
+    """
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -96,7 +129,15 @@ def find_user_by_email(email):
         db.close()
 
 def get_user_orders(user_id):
-    """Obtiene los pedidos de un usuario por su ID."""
+    """
+    Obtiene los pedidos de un usuario por su ID.
+
+    Args:
+        user_id (int): ID del usuario.
+
+    Returns:
+        list: Lista de diccionarios con información de pedidos (date, garment, size, status).
+    """
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -122,7 +163,15 @@ def get_user_orders(user_id):
         db.close()
 
 def get_user_products(user_id):
-    """Obtiene los productos creados por un usuario por su ID."""
+    """
+    Obtiene los productos creados por un usuario por su ID.
+
+    Args:
+        user_id (int): ID del usuario.
+
+    Returns:
+        list: Lista de diccionarios con información de productos (date, prenda, estilo, estado, descripcion, tela, molde).
+    """
     print(f"DEBUG get_user_products: user_id={user_id}")
     db = sqlite3.connect(settings.DB_PATH)
     try:
@@ -170,6 +219,15 @@ def get_user_products(user_id):
         db.close()
 
 def get_user_by_id(user_id):
+    """
+    Obtiene información básica de un usuario por su ID si está habilitado.
+
+    Args:
+        user_id (int): ID del usuario.
+
+    Returns:
+        dict or None: Diccionario con 'id', 'username', 'email' o None si no encontrado o deshabilitado.
+    """
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -182,7 +240,15 @@ def get_user_by_id(user_id):
         db.close()
 
 def increment_failed_attempts(user_id):
-    """Incrementa el contador de intentos fallidos de login para un usuario."""
+    """
+    Incrementa el contador de intentos fallidos de login para un usuario.
+
+    Si el número de intentos fallidos alcanza el máximo permitido, bloquea la cuenta temporalmente
+    y envía un email de alerta.
+
+    Args:
+        user_id (int): ID del usuario.
+    """
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
@@ -208,7 +274,12 @@ def increment_failed_attempts(user_id):
         db.close()
 
 def reset_failed_attempts(user_id):
-    """Reinicia el contador de intentos fallidos de login para un usuario."""
+    """
+    Reinicia el contador de intentos fallidos de login para un usuario.
+
+    Args:
+        user_id (int): ID del usuario.
+    """
     db = sqlite3.connect(settings.DB_PATH)
     try:
         db.execute("UPDATE users SET failed_attempts = 0 WHERE id_usuario = ?", (user_id,))

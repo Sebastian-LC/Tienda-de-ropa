@@ -455,10 +455,6 @@
             <label for="catalogDescripcion" class="form-label">Descripción</label>
             <input type="text" class="form-control" id="catalogDescripcion">
           </div>
-          <div class="mb-3" id="catalogHexDiv" style="display: none;">
-            <label for="catalogHex" class="form-label">Código Hex</label>
-            <input type="color" class="form-control" id="catalogHex" value="#000000">
-          </div>
           <div class="mb-3" id="catalogTallaDiv" style="display: none;">
             <label for="catalogTalla" class="form-label">Talla</label>
             <input type="text" class="form-control" id="catalogTalla" required>
@@ -472,6 +468,11 @@
             <select class="form-control" id="catalogPrenda" required>
               <option value="">Selecciona prenda</option>
             </select>
+          </div>
+          <div class="mb-3" id="catalogHexDiv" style="display: none;">
+            <label for="catalogHex" class="form-label">Código Hex</label>
+            <input type="text" class="form-control" id="catalogHex" name="codigo_hex" placeholder="#000000" value="#000000" oninput="updateColorFromHex()">
+            <input type="color" id="catalogColorPicker" value="#000000" onchange="updateHexFromColor()">
           </div>
           <div id="catalogError" class="text-danger mt-2" style="display:none;"></div>
         </form>
@@ -489,6 +490,21 @@ function mostrarSeccion(id) {
   const secciones = document.querySelectorAll('main section');
   secciones.forEach(sec => sec.classList.add('d-none'));
   document.getElementById(id).classList.remove('d-none');
+}
+
+function updateHexFromColor() {
+  const colorPicker = document.getElementById('catalogColorPicker');
+  const hexInput = document.getElementById('catalogHex');
+  hexInput.value = colorPicker.value;
+}
+
+function updateColorFromHex() {
+  const colorPicker = document.getElementById('catalogColorPicker');
+  const hexInput = document.getElementById('catalogHex');
+  const hexValue = hexInput.value;
+  if (/^#[0-9A-F]{6}$/i.test(hexValue)) {
+    colorPicker.value = hexValue;
+  }
 }
 </script>
 

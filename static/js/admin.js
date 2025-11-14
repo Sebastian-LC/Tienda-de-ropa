@@ -545,19 +545,20 @@ document.addEventListener('DOMContentLoaded', () => {
           data.items.forEach(item => {
             const row = document.createElement('tr');
             let cols = `<td>${item.id}</td><td>${item.nombre}</td>`;
+            let desc = item.descripcion || '';
             if (type === 'tela') {
-              cols += `<td>${item.material || ''}</td><td>${item.descripcion || ''}</td>`;
+              cols += `<td>${item.material || ''}</td><td>${desc}</td>`;  // Material, Descripción
             } else if (type === 'color') {
-              cols += `<td><div style="width: 20px; height: 20px; background-color: ${item.hex_code}; border: 1px solid #000;"></div> ${item.hex_code}</td><td>${item.descripcion || ''}</td>`;
+              cols += `<td><div style="width: 20px; height: 20px; background-color: ${item.codigo_hex}; border: 1px solid #000;"></div> ${item.codigo_hex}</td><td>${desc}</td>`;  // Código Hex, Descripción
             } else if (type === 'prenda') {
-              cols += `<td>${item.descripcion || ''}</td>`;
+              cols += `<td>${desc}</td>`;  // Descripción
             } else if (type === 'estilo') {
-              cols += `<td>${item.prenda || ''}</td><td>${item.descripcion || ''}</td>`;
+              cols += `<td>${item.prenda_nombre || ''}</td><td>${desc}</td>`;  // Prenda, Descripción
             } else if (type === 'molde') {
-              cols += `<td>${item.talla || ''}</td><td>${item.descripcion || ''}</td>`;
+              cols += `<td>${item.talla || ''}</td><td>${desc}</td>`;  // Talla, Descripción
             }
             cols += `<td>
-              <button class="btn btn-sm btn-warning" onclick="editCatalogItem('${type}', ${item.id}, '${item.nombre}', '${item.descripcion || ''}', '${item.hex_code || ''}', '${item.material || ''}', '${item.prenda || ''}', '${item.talla || ''}')">Editar</button>
+              <button class="btn btn-sm btn-warning" onclick="editCatalogItem('${type}', ${item.id}, '${item.nombre}', '${desc}', '${item.codigo_hex || ''}', '${item.material || ''}', '${item.id_tipo_prenda || ''}', '${item.talla || ''}')">Editar</button>
               <button class="btn btn-sm btn-danger" onclick="deleteCatalogItem('${type}', ${item.id})">Eliminar</button>
             </td>`;
             row.innerHTML = cols;
@@ -573,8 +574,32 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
+  // Función para cargar prendas en el select
+  function loadPrendasForSelect() {
+    const select = document.getElementById('catalogPrenda');
+    select.innerHTML = '<option value="">Cargando...</option>';
+    fetch('/api/prendas')
+      .then(r => r.json())
+      .then(data => {
+        select.innerHTML = '<option value="">Selecciona prenda</option>';
+        if (data && data.length > 0) {
+          data.forEach(prenda => {
+            const option = document.createElement('option');
+            option.value = prenda.id;
+            option.textContent = prenda.nombre;
+            select.appendChild(option);
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Error cargando prendas:', error);
+        select.innerHTML = '<option value="">Error al cargar prendas</option>';
+      });
+  }
+
   // Función para mostrar modal de agregar/editar
   window.showAddModal = function(type) {
+    console.log('showAddModal called with type:', type);
     document.getElementById('catalogType').value = type;
     document.getElementById('catalogId').value = '';
     document.getElementById('catalogNombre').value = '';
@@ -587,9 +612,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mostrar/ocultar campos según el tipo
     document.getElementById('catalogDescDiv').style.display = (type === 'color') ? 'none' : 'block';
     document.getElementById('catalogHexDiv').style.display = (type === 'color') ? 'block' : 'none';
+    console.log('catalogHexDiv display set to:', document.getElementById('catalogHexDiv').style.display);
     document.getElementById('catalogTallaDiv').style.display = (type === 'molde') ? 'block' : 'none';
-    document.getElementById('catalogMaterialDiv').style.display = (type === 'tela') ? 'block' : 'none';
+    document.getElementById('catalogMaterialDiv').style.display = 'none';
     document.getElementById('catalogPrendaDiv').style.display = (type === 'estilo') ? 'block' : 'none';
+    if (type === 'estilo') {
+      loadPrendasForSelect();
+    }
     document.getElementById('catalogError').style.display = 'none';
     const modal = new bootstrap.Modal(document.getElementById('catalogModal'));
     modal.show();
@@ -610,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('catalogDescDiv').style.display = (type === 'color') ? 'none' : 'block';
     document.getElementById('catalogHexDiv').style.display = (type === 'color') ? 'block' : 'none';
     document.getElementById('catalogTallaDiv').style.display = (type === 'molde') ? 'block' : 'none';
-    document.getElementById('catalogMaterialDiv').style.display = (type === 'tela') ? 'block' : 'none';
+    document.getElementById('catalogMaterialDiv').style.display = 'none';
     document.getElementById('catalogPrendaDiv').style.display = (type === 'estilo') ? 'block' : 'none';
     document.getElementById('catalogError').style.display = 'none';
     const modal = new bootstrap.Modal(document.getElementById('catalogModal'));
@@ -659,10 +688,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const formData = new URLSearchParams();
       formData.append('nombre', nombre);
       if (descripcion) formData.append('descripcion', descripcion);
-      if (type === 'color' && hex) formData.append('hex_code', hex);
+      if (type === 'color' && hex) formData.append('codigo_hex', hex);
       if (type === 'molde' && talla) formData.append('talla', talla);
-      if (type === 'tela' && material) formData.append('material', material);
-      if (type === 'estilo' && prenda) formData.append('prenda', prenda);
+      if (type === 'estilo' && prenda) formData.append('id_prenda', prenda);
 
       const url = id ? `/api/catalog/${type}/${id}` : `/api/catalog/${type}`;
       const method = id ? 'PUT' : 'POST';

@@ -431,3 +431,61 @@
 2025-11-12T00:07:14 | LOGIN duration: 0.21 seconds for user 1
 2025-11-13T03:15:30.250293 | ip:127.0.0.1 | user:1 | success:1
 2025-11-13T03:15:30 | LOGIN duration: 0.75 seconds for user 1
+2025-11-14T00:30:23.451058 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T00:30:23 | LOGIN duration: 0.38 seconds for user 1
+2025-11-14T00:42:33.394949 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T00:42:33 | LOGIN duration: 0.27 seconds for user 1
+2025-11-14T00:46:33.962707 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T00:46:33 | LOGIN duration: 0.41 seconds for user 1
+2025-11-14T01:03:48.386889 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T01:03:48 | LOGIN duration: 0.60 seconds for user 1
+2025-11-14T01:12:04.734918 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T01:12:04 | LOGIN duration: 0.62 seconds for user 1
+2025-11-14T01:14:22.197434 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T01:14:22 | LOGIN duration: 0.54 seconds for user 1
+2025-11-14T02:22:35.507898 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T02:22:35 | LOGIN duration: 1.19 seconds for user 1
+2025-11-14T02:25:59.335502 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T02:25:59 | LOGIN duration: 0.97 seconds for user 1
+2025-11-14T02:34:27.527964 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T02:34:27 | LOGIN duration: 0.56 seconds for user 1
+2025-11-14T02:44:35.085671 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T02:44:35 | LOGIN duration: 0.70 seconds for user 1
+2025-11-14T02:54:08.825453 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T02:54:08 | LOGIN duration: 0.77 seconds for user 1
+2025-11-14T03:03:11.437686 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T03:03:11 | LOGIN duration: 0.91 seconds for user 1
+2025-11-14T03:08:43.111196 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T03:08:43 | LOGIN duration: 0.49 seconds for user 1
+2025-11-14T15:27:57.612047 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T15:27:57 | LOGIN duration: 0.32 seconds for user 1
+2025-11-14T15:55:41.247728 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T15:55:41 | LOGIN duration: 0.49 seconds for user 1
+2025-11-14T16:04:47.778072 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:04:47 | LOGIN duration: 0.51 seconds for user 1
+2025-11-14T16:19:06.534599 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:19:06 | LOGIN duration: 0.88 seconds for user 1
+2025-11-14T16:22:25.860281 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:22:25 | LOGIN duration: 0.57 seconds for user 1
+2025-11-14T16:28:40.938278 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:28:40 | LOGIN duration: 1.05 seconds for user 1
+2025-11-14T16:29:32.578982 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:29:32 | LOGIN duration: 0.91 seconds for user 1
+2025-11-14T16:40:02.012148 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:40:02 | LOGIN duration: 0.56 seconds for user 1
+2025-11-14T16:42:48.853053 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:42:48 | LOGIN duration: 0.45 seconds for user 1
+2025-11-14T16:46:15.572250 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:46:15 | LOGIN duration: 0.96 seconds for user 1
+2025-11-14T16:53:10.765821 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T16:53:10 | LOGIN duration: 0.93 seconds for user 1
+2025-11-14T20:47:39.804455 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T20:47:39 | LOGIN duration: 0.44 seconds for user 1
+2025-11-14T20:54:39.690294 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T20:54:39 | LOGIN duration: 0.59 seconds for user 1
+2025-11-14T21:22:57.085001 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T21:22:57 | LOGIN duration: 0.50 seconds for user 1
+2025-11-14T21:30:03.332207 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T21:30:03 | LOGIN duration: 0.81 seconds for user 1
+2025-11-14T21:44:55.488165 | ip:127.0.0.1 | user:1 | success:1
+2025-11-14T21:44:55 | LOGIN duration: 0.49 seconds for user 1
