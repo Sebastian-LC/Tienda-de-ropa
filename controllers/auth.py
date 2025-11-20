@@ -172,48 +172,56 @@ def get_user_products(user_id):
     Returns:
         list: Lista de diccionarios con información de productos (date, prenda, estilo, estado, descripcion, tela, molde).
     """
-    print(f"DEBUG get_user_products: user_id={user_id}")
+    # Fetch products but use LEFT JOINs so rows aren't excluded when related rows are missing.
     db = sqlite3.connect(settings.DB_PATH)
     try:
         cur = db.cursor()
-        # Obtener id_cliente
         cur.execute("SELECT id_cliente FROM usuario WHERE id_usuario = ?", (user_id,))
         cliente_row = cur.fetchone()
         if not cliente_row:
-            print("DEBUG: No id_cliente encontrado para user_id")
             return []
         id_cliente = cliente_row[0]
-        print(f"DEBUG: id_cliente={id_cliente}")
-        # Verificar productos sin JOIN
-        cur.execute("SELECT id_prenda, id_estilo, id_estado, created_at FROM producto WHERE id_cliente = ?", (id_cliente,))
-        raw_products = cur.fetchall()
-        print(f"DEBUG: Productos raw para id_cliente={id_cliente}: {raw_products}")
-        # Consulta con JOIN para obtener toda la información del producto
-        cur.execute("""
-            SELECT p.created_at, pr.nombre AS prenda, e.nombre AS estilo, es.descripcion AS estado, p.descripcion, t.nombre AS tela, m.nombre AS molde
+
+        query = '''
+            SELECT
+                p.id_producto,
+                p.created_at,
+                COALESCE(pr.nombre, tp.nombre, CAST(p.id_prenda AS TEXT)) AS prenda,
+                COALESCE(e.nombre, te.nombre, CAST(p.id_estilo AS TEXT)) AS estilo,
+                COALESCE(t.nombre, tt.nombre, CAST(p.id_tela AS TEXT)) AS tela,
+                COALESCE(CAST(p.id_talla AS TEXT), tm.talla, '') AS talla,
+                COALESCE(m.nombre, tm.nombre, CAST(p.id_molde AS TEXT)) AS molde,
+                p.descripcion,
+                COALESCE(es.descripcion, '') AS estado
             FROM producto p
-            JOIN prenda pr ON p.id_prenda = pr.id_prenda
-            JOIN estilo e ON p.id_estilo = e.id_estilo
-            JOIN estados es ON p.id_estado = es.id_estado
-            JOIN tela t ON p.id_tela = t.id_tela
-            JOIN molde m ON p.id_molde = m.id_molde
+            LEFT JOIN prenda pr ON p.id_prenda = pr.id_prenda
+            LEFT JOIN tipo_prenda tp ON p.id_prenda = tp.id_tipo_prenda
+            LEFT JOIN estilo e ON p.id_estilo = e.id_estilo
+            LEFT JOIN tipo_estilo te ON p.id_estilo = te.id_tipo_estilo
+            LEFT JOIN tela t ON p.id_tela = t.id_tela
+            LEFT JOIN tipo_tela tt ON p.id_tela = tt.id_tipo_tela
+            LEFT JOIN molde m ON p.id_molde = m.id_molde
+            LEFT JOIN tipo_molde tm ON m.id_tipo_molde = tm.id_tipo_molde
+            LEFT JOIN estados es ON p.id_estado = es.id_estado
             WHERE p.id_cliente = ?
             ORDER BY p.created_at DESC
-        """, (id_cliente,))
+        '''
+
+        cur.execute(query, (id_cliente,))
         rows = cur.fetchall()
-        print(f"DEBUG: Resultados del JOIN: {rows}")
+
         products = []
         for row in rows:
             products.append({
-                "date": row[0] or "Sin fecha",
-                "prenda": row[1] or "N/A",
-                "estilo": row[2] or "N/A",
-                "estado": row[3] or "N/A",
-                "descripcion": row[4] or "N/A",
-                "tela": row[5] or "N/A",
-                "molde": row[6] or "N/A"
+                "date": row[1] or "",
+                "prenda": row[2] or "N/A",
+                "estilo": row[3] or "N/A",
+                "estado": row[8] or "N/A",
+                "descripcion": row[7] or "N/A",
+                "tela": row[4] or "N/A",
+                "molde": row[6] or "N/A",
+                "talla": row[5] or ""
             })
-        print(f"DEBUG: Products list: {products}")
         return products
     finally:
         db.close()

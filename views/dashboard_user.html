@@ -53,7 +53,7 @@
           <a class="nav-link" href="#" onclick="mostrarSeccion('carrito')">Carrito<i class="fa fa-shopping-cart"></i></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#" onclick="mostrarSeccion('Cerrar Sesion')">Cerrar Sesion<i class="fa fa-door-open"></i></a>
+          <a class="nav-link" href="/logout">Cerrar Sesion<i class="fa fa-door-open"></i></a>
         </li>
       </ul>
       <!-- Iconos -->
@@ -89,38 +89,35 @@
           <div class="selection-general-panel">
             <h4>Selección General: </h4>
             <div class="form-group">
-              <label for="tipo-prenda">Tipo de prenda</label>
-              <select id="tipo-prenda" onchange="updatePreview()">
-                <option value="">Selecciona tipo</option>
-                <option value="Camiseta">Camiseta</option>
-                <option value="Blusa">Blusa</option>
-                <option value="Chaqueta">Chaqueta</option>
-                <option value="Pantalón">Pantalón</option>
+              <label for="id_prenda">Prenda</label>
+              <select id="id_prenda" onchange="loadTiposPrenda(); loadEstilosPrenda(); updatePreview()">
+                <option value="">Selecciona prenda</option>
+                <!-- loop prendas -->
+                <option value="{item.id}">{item.nombre}</option>
+                <!-- endloop -->
               </select>
             </div>
             <div class="form-group">
-              <label for="estilo-prenda">Estilo</label>
-              <select id="estilo-prenda" onchange="updatePreview()">
+              <label for="id_estilo">Estilo</label>
+              <select id="id_estilo" onchange="updatePreview()">
                 <option value="">Selecciona estilo</option>
-                <option value="Manga corta">Manga corta</option>
-                <option value="Manga larga">Manga larga</option>
-                <option value="Cuello V">Cuello V</option>
-                <option value="Oversize">Oversize</option>
-
+                <!-- loop estilos -->
+                <option value="{item.id}">{item.nombre}</option>
+                <!-- endloop -->
               </select>
             </div>
             <div class="form-group">
-              <label for="tela-prenda">Tela</label>
-              <select id="tela-prenda" onchange="updatePreview()">
+              <label for="id_tela">Tela</label>
+              <select id="id_tela" onchange="updatePreview()">
                 <option value="">Selecciona tela</option>
-                <option value="Algodón">Algodón</option>
-                <option value="Lino">Lino</option>
-                <option value="Poliéster">Poliéster</option>
+                <!-- loop telas -->
+                <option value="{item.id}">{item.nombre}</option>
+                <!-- endloop -->
               </select>
             </div>
             <div class="form-group">
-              <label for="color-prenda">Color</label>
-              <input type="color" id="color-prenda" value="#f8fbff" oninput="updatePreview()">
+              <label for="color">Color</label>
+              <input type="color" id="color" value="#f8fbff" oninput="updatePreview()">
             <br><br><br><br><br><br>
               <div class="form-group">
               <button type="button" id="upload-btn">Subir imagen de diseño</button>
@@ -151,8 +148,8 @@
           <div class="mode-personalizacion-panel">
             <h4>Modo de Personalización: </h4>
             <div class="form-group">
-              <label for="modo-personalizacion">Modo</label>
-              <select id="modo-personalizacion" onchange="setMode(this.value)">
+              <label for="modo">Modo</label>
+              <select id="modo" onchange="setMode(this.value)">
                 <option value="basico">Básico</option>
                 <option value="avanzado">Avanzado</option>
               </select>
@@ -212,6 +209,7 @@
           <div class="summary-panel">
             <h5>Resumen de Personalización</h5>
             <div id="summary-output"></div>
+            <!-- JSON output will be rendered inside the summary below -->
           </div>
       </section>
 
@@ -226,6 +224,7 @@
               <th>Fecha</th>
               <th>Prenda</th>
               <th>Estilo</th>
+              <th>Talla</th>
               <th>Tela</th>
               <th>Molde</th>
               <th>Descripción</th>
@@ -238,6 +237,7 @@
               <td>{item.date}</td>
               <td>{item.prenda}</td>
               <td>{item.estilo}</td>
+              <td>{item.talla}</td>
               <td>{item.tela}</td>
               <td>{item.molde}</td>
               <td>{item.descripcion}</td>
@@ -312,6 +312,8 @@
         </a>
       </div>
     </footer>
+    <!-- Toast container para notificaciones no bloqueantes -->
+    <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" aria-live="polite" aria-atomic="true"></div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/static/js/utils.js"></script>
   <script src="/static/js/dashboard_user.js"></script>

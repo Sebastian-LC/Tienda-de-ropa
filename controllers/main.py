@@ -373,6 +373,46 @@ class Handler(BaseHTTPRequestHandler):
                 db.close()
             self.respond(200, json.dumps(tipos), content_type="application/json")
             return
+        elif self.path.startswith("/estilos_prenda"):
+            # Endpoint para estilos dependientes de prenda
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(self.path)
+            query_params = parse_qs(parsed.query)
+            # Accept either id_tipo_prenda (preferred) or id_prenda.
+            id_tipo_prenda = query_params.get('id_tipo_prenda', [''])[0]
+            id_prenda = query_params.get('id_prenda', [''])[0]
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                estilos = []
+                if id_tipo_prenda:
+                    try:
+                        cur.execute("SELECT id_tipo_estilo, nombre FROM tipo_estilo WHERE id_tipo_prenda = ?", (int(id_tipo_prenda),))
+                        estilos = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                    except Exception:
+                        estilos = []
+                elif id_prenda:
+                    # First try: maybe the caller passed an id_tipo_prenda into id_prenda (common when frontend uses tipo ids)
+                    try:
+                        cur.execute("SELECT id_tipo_estilo, nombre FROM tipo_estilo WHERE id_tipo_prenda = ?", (int(id_prenda),))
+                        estilos = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                    except Exception:
+                        estilos = []
+                    # If still empty, fall back to resolving id_tipo_prenda from prenda table
+                    if not estilos:
+                        cur.execute("SELECT id_tipo_prenda FROM prenda WHERE id_prenda = ?", (int(id_prenda),))
+                        row = cur.fetchone()
+                        if row:
+                            cur.execute("SELECT id_tipo_estilo, nombre FROM tipo_estilo WHERE id_tipo_prenda = ?", (row[0],))
+                            estilos = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+                else:
+                    # No parameter provided, return all estilos
+                    cur.execute("SELECT id_tipo_estilo, nombre FROM tipo_estilo")
+                    estilos = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+            finally:
+                db.close()
+            self.respond(200, json.dumps(estilos), content_type="application/json")
+            return
         elif self.path == "/api/prendas":
             db = sqlite3.connect(settings.DB_PATH)
             try:
@@ -382,6 +422,49 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 db.close()
             self.respond(200, json.dumps(prendas), content_type="application/json")
+            return
+        elif self.path == "/api/user_products":
+            # Devuelve JSON con los productos del usuario para refrescar la tabla Informes
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok:
+                self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                return
+            user_id = session_data.get("user_id")
+            try:
+                products = auth.get_user_products(user_id)
+                self.respond(200, json.dumps({"ok": True, "products": products}), content_type="application/json")
+            except Exception as e:
+                print(f"Error devolviendo user_products: {e}")
+                self.respond(500, json.dumps({"ok": False, "msg": "Error interno"}), content_type="application/json")
+            return
+        elif self.path == "/api/estilos":
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                cur.execute("SELECT id_tipo_estilo as id, nombre FROM tipo_estilo")
+                estilos = [{"id": r[0], "nombre": r[1]} for r in cur.fetchall()]
+            finally:
+                db.close()
+            self.respond(200, json.dumps(estilos), content_type="application/json")
+            return
+        elif self.path == "/api/tallas":
+            # Devuelve las tallas disponibles desde la columna `talla` en `tipo_molde` (distintas, ordenadas)
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                # `molde` no contiene columna `talla` en el esquema actual; leer solo de `tipo_molde`
+                cur.execute("""
+                    SELECT DISTINCT TRIM(talla) as talla
+                    FROM tipo_molde
+                    WHERE talla IS NOT NULL AND TRIM(talla) <> ''
+                    ORDER BY talla COLLATE NOCASE ASC
+                """)
+                rows = cur.fetchall()
+                tallas = [r[0] for r in rows if r and r[0] is not None]
+            finally:
+                db.close()
+            self.respond(200, json.dumps(tallas), content_type="application/json")
             return
         elif self.path.startswith("/api/catalog/"):
             parts = self.path.split('/')
@@ -711,6 +794,201 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 db.close()
             self.respond(200, json.dumps({"ok": True, "msg": "Prenda creada exitosamente"}), content_type="application/json")
+            return
+        elif self.path == "/api/guardar-diseno":
+            # Recibe JSON con diseño y lo guarda en la tabla producto (y deja copia JSONL)
+            try:
+                payload = json.loads(body) if body else {}
+            except Exception as e:
+                self.respond(400, json.dumps({"ok": False, "msg": "JSON inválido"}), content_type="application/json")
+                return
+
+            # Permitir header de depuración `X-Debug-User` desde localhost para pruebas locales
+            debug_user = self.headers.get('X-Debug-User')
+            user_id = None
+            if debug_user and self.client_address[0] in ('127.0.0.1', '::1', 'localhost'):
+                try:
+                    user_id = int(debug_user)
+                except Exception:
+                    user_id = None
+            else:
+                # Requerir sesión para asociar cliente
+                session_id = self.get_session()
+                if not session_id:
+                    self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                    return
+                auth_ok, session_data = auth.require_session(session_id)
+                if not auth_ok:
+                    self.respond(403, json.dumps({"ok": False, "msg": "No autorizado"}), content_type="application/json")
+                    return
+                user_id = session_data.get("user_id")
+
+            # Normalizar campos que el frontend puede enviar (soporta tanto id/label como la antigua forma)
+            tipo_id = payload.get('tipo_id') or payload.get('tipo')
+            estilo_id = payload.get('estilo_id') or payload.get('estilo')
+            tela_id = payload.get('tela_id') or payload.get('tela')
+            # id_talla may come as id_talla, talla_id or simple talla (string)
+            id_talla_payload = payload.get('id_talla') or payload.get('talla_id') or payload.get('talla')
+            color = payload.get('color') or ''
+            modo = payload.get('modo') or payload.get('mode') or 'basico'
+            talla = payload.get('talla') or ''
+            medidas = payload.get('medidas') if isinstance(payload.get('medidas'), dict) else None
+            # Determina si se debe guardar como producto (solo por acción explícita)
+            save_as_product = payload.get('save_as_product')
+            if isinstance(save_as_product, str):
+                save_as_product = save_as_product.lower() in ('1', 'true', 'yes')
+            else:
+                save_as_product = bool(save_as_product)
+
+            # Construir descripción legible para guardar en producto.descripcion
+            tipo_label = payload.get('tipo_label') or ''
+            estilo_label = payload.get('estilo_label') or ''
+            tela_label = payload.get('tela_label') or ''
+            desc_parts = []
+            if tipo_label:
+                desc_parts.append(str(tipo_label))
+            elif tipo_id:
+                desc_parts.append(f"tipo:{tipo_id}")
+            if estilo_label:
+                desc_parts.append(str(estilo_label))
+            elif estilo_id:
+                desc_parts.append(f"estilo:{estilo_id}")
+            if tela_label:
+                desc_parts.append(str(tela_label))
+            elif tela_id:
+                desc_parts.append(f"tela:{tela_id}")
+            if color:
+                desc_parts.append(f"color:{color}")
+            if talla:
+                desc_parts.append(f"talla:{talla}")
+            description = ' | '.join(desc_parts) or ''
+
+            # Obtener id_cliente desde la tabla usuario
+            id_cliente = None
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                try:
+                    cur.execute("SELECT id_cliente FROM usuario WHERE id_usuario = ?", (user_id,))
+                    row = cur.fetchone()
+                    if row:
+                        id_cliente = row[0]
+                except Exception:
+                    id_cliente = None
+                # Si no se solicitó guardar como producto, solo escribir backup JSONL y devolver ok
+                if not save_as_product:
+                    product_id = None
+                    try:
+                        record = {
+                            "ts": datetime.utcnow().isoformat() + "Z",
+                            "user_id": user_id,
+                            "client_ip": client_ip,
+                            "design": payload,
+                            "saved_product_id": None
+                        }
+                        save_path = os.path.join(ROOT_DIR, 'db', 'guardados.jsonl')
+                        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                        with open(save_path, 'a', encoding='utf-8') as f:
+                            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    except Exception as e:
+                        print(f"Warning: no se pudo escribir JSONL de backup: {e}")
+                    self.respond(200, json.dumps({"ok": True, "msg": "Backup guardado (no insertado como producto)"}), content_type="application/json")
+                    return
+
+                # Protección contra duplicados: buscar inserciones muy recientes iguales (10s)
+                try:
+                    # Normalizar ids a enteros o None
+                    tid = int(tipo_id) if tipo_id not in (None, '') else None
+                    seid = int(estilo_id) if estilo_id not in (None, '') else None
+                    tid_tela = int(tela_id) if tela_id not in (None, '') else None
+                    # id_talla may be non-numeric (strings like 'M'), keep as-is
+                    tt = id_talla_payload if id_talla_payload not in (None, '') else None
+                except Exception:
+                    tid = seid = tid_tela = None
+
+                try:
+                    cur.execute("""
+                        SELECT id_producto FROM producto
+                        WHERE id_cliente = ?
+                          AND COALESCE(id_prenda, -1) = COALESCE(?, -1)
+                          AND COALESCE(id_estilo, -1) = COALESCE(?, -1)
+                          AND COALESCE(id_tela, -1) = COALESCE(?, -1)
+                          AND COALESCE(CAST(id_talla AS TEXT), '') = COALESCE(?, '')
+                          AND descripcion = ?
+                          AND created_at >= datetime('now', '-10 seconds')
+                        LIMIT 1
+                    """, (id_cliente, tid, seid, tid_tela, tt or '', description))
+                    dup = cur.fetchone()
+                    if dup:
+                        product_id = dup[0]
+                        # No insertar duplicado; devolver el id existente
+                        db.commit()
+                        self.respond(200, json.dumps({"ok": True, "msg": "Diseño ya guardado recientemente", "product_id": product_id}), content_type="application/json")
+                        return
+                except Exception as e:
+                    # Si la verificación falla, continuar con el insert y reportar si falla después
+                    print(f"Warning: falla verificación duplicado: {e}")
+
+                # Insertar en producto con estado por defecto = 1
+                try:
+                    # Intentar obtener id_molde enviado desde el frontend (molde_id, id_molde o molde)
+                    raw_molde = payload.get('molde_id') or payload.get('id_molde') or payload.get('molde')
+                    try:
+                        mid = int(raw_molde) if raw_molde not in (None, '') else None
+                    except Exception:
+                        mid = None
+
+                    # Only persist id_molde if mode is advanced
+                    if modo != 'avanzado':
+                        mid_to_store = None
+                    else:
+                        mid_to_store = mid
+
+                    # id_talla: store as text (may be string like 'M')
+                    id_talla_to_store = tt if tt is not None else None
+
+                    cur.execute(
+                        "INSERT INTO producto (descripcion, id_prenda, id_estilo, id_molde, id_tela, id_talla, id_estado, id_cliente, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))",
+                        (
+                            description,
+                            tid,
+                            seid,
+                            mid_to_store,
+                            tid_tela,
+                            id_talla_to_store,
+                            1,  # estado predeterminado
+                            id_cliente
+                        )
+                    )
+                    db.commit()
+                    product_id = cur.lastrowid
+                    # Log de auditoría
+                    log_db_action(user_id, f"SAVED_DESIGN_AS_PRODUCT {product_id}")
+                except Exception as e:
+                    db.rollback()
+                    print(f"Error insertando producto: {e}")
+                    self.respond(500, json.dumps({"ok": False, "msg": f"Error al insertar producto: {str(e)}"}), content_type="application/json")
+                    return
+            finally:
+                db.close()
+
+            # Guardar copia JSONL (backup) con metadatos
+            try:
+                record = {
+                    "ts": datetime.utcnow().isoformat() + "Z",
+                    "user_id": user_id,
+                    "client_ip": client_ip,
+                    "design": payload,
+                    "saved_product_id": product_id
+                }
+                save_path = os.path.join(ROOT_DIR, 'db', 'guardados.jsonl')
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                with open(save_path, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps(record, ensure_ascii=False) + "\n")
+            except Exception as e:
+                print(f"Warning: no se pudo escribir JSONL de backup: {e}")
+
+            self.respond(200, json.dumps({"ok": True, "msg": "Guardado como producto", "product_id": product_id}), content_type="application/json")
             return
         elif self.path.startswith("/api/catalog/"):
             parts = self.path.split('/')

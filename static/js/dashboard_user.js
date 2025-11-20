@@ -29,6 +29,33 @@ let overlayX = 200, overlayY = 200, overlayW = 120, overlayH = 120;
 const toRad = deg => deg * Math.PI / 180;
 const toDeg = rad => rad * 180 / Math.PI;
 
+// Mostrar un toast no bloqueante usando Bootstrap
+function showToast(message, type = 'info', timeout = 4000) {
+  try {
+    const container = document.getElementById('toast-container');
+    if (!container) {
+      console.log('TOAST:', message);
+      return;
+    }
+    const colorClass = type === 'success' ? 'success' : (type === 'error' ? 'danger' : 'secondary');
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-bg-${colorClass} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
+    container.appendChild(toastEl);
+    // eslint-disable-next-line no-undef
+    const bsToast = new bootstrap.Toast(toastEl, { delay: timeout });
+    bsToast.show();
+    toastEl.addEventListener('hidden.bs.toast', () => {
+      toastEl.remove();
+    });
+  } catch (e) {
+    console.log('showToast error', e, message);
+  }
+}
+
 function getCenter(rect) {
   return {
     x: rect.left + rect.width / 2,
@@ -166,33 +193,25 @@ upload.addEventListener('change', e => {
 });
 
 function doUpdatePreview() {
-  const tipo = document.getElementById('tipo-prenda')?.value || '';
-  const estilo = document.getElementById('estilo-prenda')?.value || '';
-  const tela = document.getElementById('tela-prenda')?.value || '';
-  const color = document.getElementById('color-prenda')?.value || '#f8fbff';
+  const data = collectDesignData();
 
   // Pintar la camiseta con el color seleccionado
   if (canvas) {
-    pintarCamiseta(color);
+    pintarCamiseta(data.color);
   } else {
     // Cambiar color con CSS para dashboard_user.html
     const previewImg = document.querySelector('.preview-img');
     if (previewImg) {
-      previewImg.style.setProperty('--selected-color', color);
+      previewImg.style.setProperty('--selected-color', data.color);
     }
   }
 
-  // Generar JSON
-  const data = {
-    tipo: tipo,
-    estilo: estilo,
-    tela: tela,
-    color: color,
-    modo: currentMode
-  };
+  // Generar JSON (ya obtenido)
 
   if (currentMode === 'basico') {
     data.talla = document.getElementById('talla-basica')?.value || '';
+    // For persistence, send id_talla (store the selected talla string/value)
+    data.id_talla = data.talla || '';
   } else {
     data.medidas = {
       cuello: parseFloat(document.getElementById('cuello')?.value) || 0,
@@ -208,9 +227,9 @@ function doUpdatePreview() {
   const summaryOutput = document.getElementById('summary-output');
   if (summaryOutput) {
     let summaryHTML = '<ul class="summary-list">';
-    summaryHTML += `<li><strong>Tipo de prenda:</strong> ${data.tipo || 'No seleccionado'}</li>`;
-    summaryHTML += `<li><strong>Estilo:</strong> ${data.estilo || 'No seleccionado'}</li>`;
-    summaryHTML += `<li><strong>Tela:</strong> ${data.tela || 'No seleccionado'}</li>`;
+    summaryHTML += `<li><strong>Tipo de prenda:</strong> ${data.tipo_label || data.tipo_id || 'No seleccionado'}</li>`;
+    summaryHTML += `<li><strong>Estilo:</strong> ${data.estilo_label || data.estilo_id || 'No seleccionado'}</li>`;
+    summaryHTML += `<li><strong>Tela:</strong> ${data.tela_label || data.tela_id || 'No seleccionado'}</li>`;
     summaryHTML += `<li><strong>Color:</strong> <span style="display:inline-block;width:20px;height:20px;background-color:${data.color};border:1px solid #000;"></span> ${data.color}</li>`;
     summaryHTML += `<li><strong>Modo:</strong> ${data.modo === 'basico' ? 'Básico' : 'Avanzado'}</li>`;
     if (data.modo === 'basico') {
@@ -229,6 +248,91 @@ function doUpdatePreview() {
     summaryHTML += '</ul>';
     summaryOutput.innerHTML = summaryHTML;
   }
+  // Si están las opciones principales (usando ids actuales), programar envío al backend
+  if (data.tipo_id && data.estilo_id && data.tela_id) {
+    scheduleSendDesign(data);
+  }
+}
+
+// Recopila los datos actuales del formulario y devuelve el objeto JSON
+function collectDesignData() {
+  // Usar los mismos IDs que el HTML (`id_prenda`, `id_estilo`, `id_tela`, `color`, `id_molde`)
+  const tipoEl = document.getElementById('id_prenda');
+  const estiloEl = document.getElementById('id_estilo');
+  const telaEl = document.getElementById('id_tela');
+  const moldeEl = document.getElementById('id_molde');
+  const colorEl = document.getElementById('color');
+
+  const tipo_id = tipoEl?.value || '';
+  const tipo_label = tipoEl?.selectedOptions?.[0]?.text || '';
+  const estilo_id = estiloEl?.value || '';
+  const estilo_label = estiloEl?.selectedOptions?.[0]?.text || '';
+  const tela_id = telaEl?.value || '';
+  const tela_label = telaEl?.selectedOptions?.[0]?.text || '';
+  const molde_id = moldeEl?.value || '';
+  const molde_label = moldeEl?.selectedOptions?.[0]?.text || '';
+  const color = colorEl?.value || '#f8fbff';
+
+  const data = {
+    tipo_id: tipo_id,
+    tipo_label: tipo_label,
+    estilo_id: estilo_id,
+    estilo_label: estilo_label,
+    tela_id: tela_id,
+    tela_label: tela_label,
+    molde_id: molde_id,
+    molde_label: molde_label,
+    color: color,
+    modo: currentMode
+  };
+
+  if (currentMode === 'basico') {
+    data.talla = document.getElementById('talla-basica')?.value || '';
+  } else {
+    data.medidas = {
+      cuello: parseFloat(document.getElementById('cuello')?.value) || 0,
+      torax: parseFloat(document.getElementById('torax')?.value) || 0,
+      largoTotal: parseFloat(document.getElementById('largo-total')?.value) || 0,
+      sisa: parseFloat(document.getElementById('sisa')?.value) || 0,
+      largoManga: parseFloat(document.getElementById('largo-manga')?.value) || 0,
+      brazo: parseFloat(document.getElementById('brazo')?.value) || 0,
+      hombro: parseFloat(document.getElementById('hombro')?.value) || 0
+    };
+  }
+
+  return data;
+}
+
+// Envío al backend con debounce/tonting para evitar spam
+let sendDesignTimeout = null;
+let lastSentDesignJSON = null;
+function scheduleSendDesign(data) {
+  const json = JSON.stringify(data);
+  if (json === lastSentDesignJSON) return; // no enviar si no cambió
+  if (sendDesignTimeout) clearTimeout(sendDesignTimeout);
+  sendDesignTimeout = setTimeout(() => {
+    // Autosave: nunca insertar como producto, solo backup
+    const sendData = Object.assign({}, data, { save_as_product: false });
+    sendDesign(sendData).catch(err => console.error('Error enviando diseño:', err));
+  }, 700);
+}
+
+function sendDesign(data) {
+  lastSentDesignJSON = JSON.stringify(data);
+  return fetch('/api/guardar-diseno', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(resp => resp.json())
+  .then(res => {
+    if (!res.ok) {
+      console.warn('Servidor respondió con error al guardar diseño:', res.msg || res);
+    } else {
+      console.log('Diseño guardado en backend:', res);
+    }
+    return res;
+  });
 }
 
 function mostrarSeccion(seccionId) {
@@ -258,6 +362,8 @@ function setMode(mode) {
     avanzadoOptions.style.display = 'block';
   }
   updatePreview();
+  // Al cargar la página, refrescar la tabla de Informes
+  try { refreshInformes(); } catch (e) { console.warn('refreshInformes init error', e); }
 }
 
 function updatePreview() {
@@ -336,12 +442,104 @@ function updatePreviewSize() {
 }
 
 function guardarDiseno() {
-  const jsonData = document.getElementById('json-output').textContent;
-  // Simular envío al backend (aquí puedes integrar con fetch o AJAX)
-  console.log('Guardando diseño:', jsonData);
-  alert('Diseño guardado exitosamente!\n' + jsonData);
-  // Aquí puedes enviar los datos al servidor
-  // fetch('/api/guardar-diseno', { method: 'POST', body: jsonData, headers: {'Content-Type': 'application/json'} });
+  // Recolectar datos y enviar al backend inmediatamente
+  const data = collectDesignData();
+  // Evitar que un auto-save pendiente provoque un segundo POST:
+  if (typeof sendDesignTimeout !== 'undefined' && sendDesignTimeout) {
+    clearTimeout(sendDesignTimeout);
+    sendDesignTimeout = null;
+  }
+  try {
+    lastSentDesignJSON = JSON.stringify(data);
+  } catch (e) {
+    lastSentDesignJSON = null;
+  }
+  // Envío manual: marcar para que se guarde como producto
+  const sendData = Object.assign({}, data, { save_as_product: true });
+  // Only persist id_molde when in advanced mode (modo personalizado avanzado)
+  if (currentMode !== 'avanzado') {
+    // ensure we do not send molde id for non-advanced saves
+    sendData.molde_id = null;
+    sendData.id_molde = null;
+  } else {
+    // if advanced, make sure id_talla is not sent as a selected talla
+    // (advanced uses measurements or molde)
+    sendData.id_talla = sendData.id_talla || '';
+  }
+  sendDesign(sendData)
+    .then(res => {
+      // Mostrar notificación no bloqueante en UI
+      if (res && res.ok) {
+        console.log('Diseño guardado en servidor (manual save)', res);
+        showToast('Diseño guardado correctamente', 'success', 3500);
+        // Actualizar la tabla Informes
+        try { refreshInformes(); } catch (e) { console.warn('Error refrescando informes:', e); }
+      } else {
+        console.warn('Error al guardar diseño en el servidor:', res.msg || res);
+        showToast('Error al guardar diseño. Revisa la consola.', 'error', 6000);
+      }
+    })
+    .catch(err => {
+      console.error('Error guardando diseño:', err);
+      showToast('Error al guardar diseño. Revisa la consola.', 'error', 6000);
+    });
+}
+
+// Refresca la tabla Informes solicitando /api/user_products y rendereando el tbody
+function refreshInformes() {
+  fetch('/api/user_products')
+    .then(resp => resp.json())
+    .then(data => {
+      if (!data || !data.ok) {
+        console.warn('No se pudo obtener productos para informes:', data);
+        return;
+      }
+      const products = data.products || [];
+      const tbody = document.querySelector('#informes table tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      // Helper: parsear fecha de DB (YYYY-MM-DD HH:MM:SS o ISO) y convertir a zona Colombia
+      function formatDateToBogota(dbDateStr) {
+        if (!dbDateStr) return '';
+        let s = String(dbDateStr).trim();
+        let d;
+        // Si ya es ISO con T
+        if (s.includes('T')) {
+          d = new Date(s);
+        } else {
+          // Convertir 'YYYY-MM-DD HH:MM:SS' -> 'YYYY-MM-DDTHH:MM:SSZ' asumiendo UTC almacenado
+          d = new Date(s.replace(' ', 'T') + 'Z');
+        }
+        if (isNaN(d.getTime())) return dbDateStr;
+        try {
+          return d.toLocaleString('es-CO', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+          return d.toString();
+        }
+      }
+
+      products.forEach(p => {
+        const tr = document.createElement('tr');
+        const date = document.createElement('td'); date.textContent = formatDateToBogota(p.date) || '';
+        const prenda = document.createElement('td'); prenda.textContent = p.prenda || '';
+        const estilo = document.createElement('td'); estilo.textContent = p.estilo || '';
+        const tela = document.createElement('td'); tela.textContent = p.tela || '';
+        const tallaTd = document.createElement('td'); tallaTd.textContent = p.talla || '';
+        const molde = document.createElement('td'); molde.textContent = p.molde || '';
+        const descripcion = document.createElement('td'); descripcion.textContent = p.descripcion || '';
+        const estado = document.createElement('td'); estado.textContent = p.estado || '';
+        tr.appendChild(date);
+        tr.appendChild(prenda);
+        tr.appendChild(estilo);
+        tr.appendChild(tela);
+        tr.appendChild(tallaTd);
+        tr.appendChild(molde);
+        tr.appendChild(descripcion);
+        tr.appendChild(estado);
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(err => console.error('Error refrescando informes:', err));
 }
 
 function autoResizeInput(input) {
@@ -390,6 +588,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   updatePreview();
+  // Cargar tallas desde la base de datos
+  function loadTallas() {
+    const tallaSelect = document.getElementById('talla-basica');
+    if (!tallaSelect) return;
+    fetch('/api/tallas')
+      .then(resp => resp.json())
+      .then(data => {
+        // Esperamos un array de strings
+        tallaSelect.innerHTML = '<option value="">Selecciona talla</option>';
+        data.forEach(t => {
+          const option = document.createElement('option');
+          option.value = t;
+          option.textContent = t;
+          tallaSelect.appendChild(option);
+        });
+      })
+      .catch(err => console.error('Error cargando tallas:', err));
+  }
+  try { loadTallas(); } catch (e) { console.warn('loadTallas error', e); }
   // Agregar event listeners a todos los inputs
   const inputs = document.querySelectorAll('select, input');
   inputs.forEach(input => {
@@ -413,8 +630,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cargar tipos de prenda al cambiar prenda
   window.loadTiposPrenda = function() {
-    const idPrenda = document.getElementById('id_prenda').value;
+    const idPrenda = document.getElementById('id_prenda')?.value || '';
+    // elemento opcional: id_tipo_prenda puede no existir en la plantilla actual
     const tipoSelect = document.getElementById('id_tipo_prenda');
+    if (!tipoSelect) return; // nada que llenar si no existe
     if (!idPrenda) {
       tipoSelect.innerHTML = '<option value="">Selecciona un tipo</option>';
       return;
@@ -431,6 +650,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       })
       .catch(error => console.error('Error cargando tipos de prenda:', error));
+  };
+
+  // Cargar estilos de prenda al cambiar prenda (esta función es llamada desde el HTML onchange)
+  window.loadEstilosPrenda = function() {
+    const idPrenda = document.getElementById('id_prenda')?.value || '';
+    const estiloSelect = document.getElementById('id_estilo');
+    if (!estiloSelect) return;
+    if (!idPrenda) {
+      estiloSelect.innerHTML = '<option value="">Selecciona estilo</option>';
+      return;
+    }
+    fetch(`/estilos_prenda?id_prenda=${idPrenda}`)
+      .then(response => response.json())
+      .then(data => {
+        estiloSelect.innerHTML = '<option value="">Selecciona estilo</option>';
+        data.forEach(estilo => {
+          const option = document.createElement('option');
+          option.value = estilo.id;
+          option.textContent = estilo.nombre;
+          estiloSelect.appendChild(option);
+        });
+      })
+      .catch(error => console.error('Error cargando estilos de prenda:', error));
   };
 
   // Función para actualizar el resumen
