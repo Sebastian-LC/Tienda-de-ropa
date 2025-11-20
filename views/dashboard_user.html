@@ -117,8 +117,13 @@
             </div>
             <div class="form-group">
               <label for="color">Color</label>
-              <input type="color" id="color" value="#f8fbff" oninput="updatePreview()">
-            <br><br><br><br><br><br>
+              <div id="color-selector">
+                <!-- loop colores -->
+                <button type="button" class="color-circle" data-color="{item.codigo_hex}" title="{item.nombre}" style="background-color: {item.codigo_hex};"></button>
+                <!-- endloop -->
+              </div>
+              <input type="hidden" id="color" value="#f8fbff">
+              <br><br><br>
               <div class="form-group">
               <button type="button" id="upload-btn">Subir imagen de diseño</button>
               <input type="file" id="upload" accept="image/*" style="display: none;">
@@ -224,8 +229,8 @@
               <th>Fecha</th>
               <th>Prenda</th>
               <th>Estilo</th>
-              <th>Talla</th>
               <th>Tela</th>
+              <th>Talla</th>
               <th>Molde</th>
               <th>Descripción</th>
               <th>Estado</th>

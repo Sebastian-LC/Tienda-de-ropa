@@ -163,10 +163,13 @@ class Handler(BaseHTTPRequestHandler):
                 # Estados
                 cur.execute("SELECT id_estado, descripcion FROM estados")
                 estados = [{"id": r[0], "descripcion": r[1]} for r in cur.fetchall()]
+                # Colores
+                cur.execute("SELECT id as id, name as nombre, hex_code as codigo_hex FROM colors")
+                colores = [{"id": r[0], "nombre": r[1], "codigo_hex": r[2]} for r in cur.fetchall()]
             finally:
                 db.close()
 
-            self.respond(200, render_template(template_name, user=user, products=products, prendas=prendas, telas=telas, estilos=estilos, moldes=moldes, estados=estados))
+            self.respond(200, render_template(template_name, user=user, products=products, prendas=prendas, telas=telas, estilos=estilos, moldes=moldes, estados=estados, colores=colores))
         
         elif self.path == "/admin/users":
             session_id = self.get_session()

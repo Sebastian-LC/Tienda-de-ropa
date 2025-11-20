@@ -206,6 +206,15 @@ function doUpdatePreview() {
     }
   }
 
+  // Actualizar la selección visual de colores
+  document.querySelectorAll('.color-circle').forEach(circle => {
+    if (circle.getAttribute('data-color') === data.color) {
+      circle.classList.add('selected');
+    } else {
+      circle.classList.remove('selected');
+    }
+  });
+
   // Generar JSON (ya obtenido)
 
   if (currentMode === 'basico') {
@@ -608,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   try { loadTallas(); } catch (e) { console.warn('loadTallas error', e); }
   // Agregar event listeners a todos los inputs
-  const inputs = document.querySelectorAll('select, input');
+  const inputs = document.querySelectorAll('select, input:not(#color)');
   inputs.forEach(input => {
     input.addEventListener('change', updatePreview);
   });
@@ -760,6 +769,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Inicializar selector de colores
+  setupColorSelector();
 });
 
 function showPrendaError(msg) {
@@ -790,4 +802,21 @@ function showPrendaSuccess(msg) {
 function validateEmail(email) {
   const emailRegex = /^\S+@\S+\.\S+$/;
   return emailRegex.test(email);
+}
+
+
+// Agregar event listeners para selección de colores
+function setupColorSelector() {
+  document.querySelectorAll('.color-circle').forEach(circle => {
+    circle.addEventListener('click', () => {
+      const color = circle.getAttribute('data-color');
+      document.getElementById('color').value = color;
+      // Remover selección de otros círculos
+      document.querySelectorAll('.color-circle').forEach(c => c.classList.remove('selected'));
+      // Agregar selección al clickeado
+      circle.classList.add('selected');
+      // Actualizar vista previa
+      updatePreview();
+    });
+  });
 }
