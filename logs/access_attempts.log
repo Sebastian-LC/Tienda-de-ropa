@@ -672,3 +672,13 @@
 2025-11-21T03:56:59 | LOGIN duration: 0.34 seconds for user 1
 2025-11-21T03:57:00.557394 | ip:127.0.0.1 | user:1 | success:1
 2025-11-21T03:57:00 | LOGIN duration: 0.30 seconds for user 1
+2025-11-21T16:22:28.678860 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T16:22:28 | LOGIN duration: 0.36 seconds for user 1
+2025-11-21T16:31:07.754084 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T16:31:07 | LOGIN duration: 0.64 seconds for user 1
+2025-11-21T16:31:47.609283 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T16:31:47 | LOGIN duration: 0.30 seconds for user 1
+2025-11-21T16:46:31.372063 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T16:46:31 | LOGIN duration: 0.61 seconds for user 1
+2025-11-21T16:55:00.267313 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T16:55:00 | LOGIN duration: 0.30 seconds for user 1

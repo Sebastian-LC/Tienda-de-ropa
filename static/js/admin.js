@@ -661,23 +661,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Función para eliminar elemento
+// Función para eliminar elemento
   window.deleteCatalogItem = function(type, id) {
-    if (confirm('¿Estás seguro de que deseas eliminar este elemento?')) {
+    const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    confirmBtn.onclick = () => {
+      modal.hide();
       fetch(`/api/catalog/${type}/${id}`, { method: 'DELETE' })
         .then(r => r.json())
         .then(data => {
           if (data.ok) {
             loadCatalogData(type);
+            showToast('Elemento eliminado exitosamente.', 'success');
           } else {
-            alert('Error al eliminar: ' + (data.msg || 'Error desconocido'));
+            showToast('Error al eliminar: ' + (data.msg || 'Error desconocido'), 'error');
           }
         })
         .catch(error => {
           console.error('Error eliminando:', error);
-          alert('Error al eliminar elemento.');
+          showToast('Error al eliminar elemento.', 'error');
         });
-    }
+    };
+    modal.show();
   };
 
   // Confirmar guardar en modal de catálogo

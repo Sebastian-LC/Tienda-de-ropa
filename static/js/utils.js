@@ -71,6 +71,35 @@ function initFormValidation(formId, customValidations = {}) {
   }
 }
 
+// Mostrar un toast no bloqueante usando Bootstrap
+function showToast(message, type = 'info', timeout = 4000) {
+  try {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '11';
+      document.body.appendChild(container);
+    }
+    const colorClass = type === 'success' ? 'success' : (type === 'error' ? 'danger' : 'secondary');
+    const toastEl = document.createElement('div');
+    toastEl.className = `toast align-items-center text-bg-${colorClass} border-0`;
+    toastEl.setAttribute('role', 'alert');
+    toastEl.setAttribute('aria-live', 'assertive');
+    toastEl.setAttribute('aria-atomic', 'true');
+    toastEl.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
+    container.appendChild(toastEl);
+    const bsToast = new bootstrap.Toast(toastEl, { delay: timeout });
+    bsToast.show();
+    toastEl.addEventListener('hidden.bs.toast', () => {
+      toastEl.remove();
+    });
+  } catch (error) {
+    console.error('Error mostrando toast:', error);
+  }
+}
+
 // Inicializador principal
 document.addEventListener('DOMContentLoaded', () => {
   // Inicializar toggle password si existe
