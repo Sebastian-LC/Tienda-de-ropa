@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById(`${type}-table-body`);
     if (!tableBody) return;
 
-    const colspan = type === 'color' || type === 'estilo' || type === 'molde' ? 5 : 4;
+    const colspan = type === 'color' || type === 'estilo' || type === 'molde' ? 4 : 3;
     tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando...</td></tr>`;
 
     fetch(`/api/catalog/${type}`)
@@ -547,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.ok && data.items && data.items.length > 0) {
           data.items.forEach(item => {
             const row = document.createElement('tr');
-            let cols = `<td>${item.id}</td><td>${item.nombre}</td>`;
+            let cols = `<td>${item.nombre}</td>`;
             let desc = item.descripcion || '';
             if (type === 'tela') {
               cols += `<td>${desc}</td>`;  // Descripción
@@ -775,4 +775,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const target = initialActiveTab.getAttribute('data-target');
     switchTab(target);
   }
+
+  // Cargar datos de todas las pestañas en background para que estén listas al cambiar
+  const allTabs = document.querySelectorAll('#catalogo-tabs .custom-tab');
+  allTabs.forEach(tab => {
+    const target = tab.getAttribute('data-target');
+    const type = target.replace('-panel', '');
+    // Solo cargar si no es la activa (ya cargada arriba)
+    if (!tab.classList.contains('active')) {
+      loadCatalogData(type);
+    }
+  });
 });

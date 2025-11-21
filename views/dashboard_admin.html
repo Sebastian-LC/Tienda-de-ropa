@@ -33,7 +33,7 @@
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('usuarios')">Gestión de Usuarios <i class="fa fa-user-edit"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('busqueda')">Búsqueda <i class="fa fa-search"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('catalogo')">Gestión de Catálogo <i class="fa fa-cogs"></i></a></li>
-          <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('informes')">Gestión de Informes <i class="fa fa-file-alt"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('informes')">Gestión de pedidos <i class="fa fa-file-alt"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="/logout">Cerrar Sesion <i class="fa fa-door-open"></i></a></li>
         </ul>
       </div>
@@ -53,7 +53,6 @@
   <table class="table table-bordered table-hover text-center align-middle">
         <thead class="table-light">
           <tr>
-            <th>ID</th>
             <th>Usuario</th>
             <th>Email</th>
             <th>Estado/Acción</th>
@@ -64,7 +63,6 @@
         <tbody>
           <!-- loop users -->
           <tr>
-            <td>{item.id}</td>
             <td>{item.username}</td>
             <td>{item.email}</td>
             <td>
@@ -104,7 +102,6 @@
         <table class="table table-bordered table-hover text-center align-middle">
           <thead class="table-light">
             <tr>
-              <th>ID</th>
               <th>Usuario</th>
               <th>Email</th>
               <th>Estado</th>
@@ -146,9 +143,7 @@
           <table class="table table-bordered table-hover text-center align-middle">
             <thead class="table-light">
               <tr>
-                <th>ID</th>
                 <th>Nombre</th>
-                <th>Material</th>
                 <th>Descripción</th>
                 <th>Acciones</th>
               </tr>
@@ -168,7 +163,6 @@
           <table class="table table-bordered table-hover text-center align-middle">
             <thead class="table-light">
               <tr>
-                <th>ID</th>
                 <th>Nombre</th>
                 <th>Código Hex</th>
                 <th>Descripción</th>
@@ -190,7 +184,6 @@
           <table class="table table-bordered table-hover text-center align-middle">
             <thead class="table-light">
               <tr>
-                <th>ID</th>
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Acciones</th>
@@ -211,7 +204,6 @@
           <table class="table table-bordered table-hover text-center align-middle">
             <thead class="table-light">
               <tr>
-                <th>ID</th>
                 <th>Nombre</th>
                 <th>Prenda</th>
                 <th>Descripción</th>
@@ -233,7 +225,6 @@
           <table class="table table-bordered table-hover text-center align-middle">
             <thead class="table-light">
               <tr>
-                <th>ID</th>
                 <th>Nombre</th>
                 <th>Talla</th>
                 <th>Descripción</th>
@@ -249,7 +240,7 @@
     </section>
 
 
-    <!-- Informes -->
+    <!-- pedidos -->
     <section id="informes" class="p-3 rounded mb-3 d-none">
       <h2>Informes de Pedidos</h2>
       <p>Aquí el administrador puede ver un resumen de pedidos realizados.</p>
