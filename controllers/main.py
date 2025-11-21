@@ -168,11 +168,11 @@ class Handler(BaseHTTPRequestHandler):
                 colores = [{"id": r[0], "nombre": r[1], "codigo_hex": r[2]} for r in cur.fetchall()]
                 # Órdenes para informes
                 cur.execute("""
-                    SELECT p.id_producto, p.created_at, u.nombre1 || ' ' || u.apellido1 as cliente, p.descripcion, e.descripcion as estado, p.id_estado
-                    FROM producto p
-                    JOIN usuario u ON p.id_cliente = u.id_cliente
-                    JOIN estados e ON p.id_estado = e.id_estado
-                    ORDER BY p.created_at DESC
+                    SELECT o.id, o.created_at, u.nombre1 || ' ' || u.apellido1 as cliente, o.descripcion, e.descripcion as estado, o.estado as id_estado
+                    FROM orders o
+                    JOIN usuario u ON o.user_id = u.id_usuario
+                    JOIN estados e ON o.estado = e.id_estado
+                    ORDER BY o.created_at DESC
                 """)
                 orders = [{"id": row[0], "fecha": row[1], "cliente": row[2], "descripcion": row[3], "estado": row[4], "id_estado": row[5]} for row in cur.fetchall()]
             finally:
@@ -351,11 +351,11 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 cur = db.cursor()
                 cur.execute("""
-                    SELECT p.id_producto, p.created_at, u.nombre1 || ' ' || u.apellido1 as cliente, p.descripcion, e.descripcion as estado, p.id_estado
-                    FROM producto p
-                    JOIN usuario u ON p.id_cliente = u.id_cliente
-                    JOIN estados e ON p.id_estado = e.id_estado
-                    ORDER BY p.created_at DESC
+                    SELECT o.id, o.created_at, u.nombre1 || ' ' || u.apellido1 as cliente, o.descripcion, e.descripcion as estado, o.estado as id_estado
+                    FROM orders o
+                    JOIN users u ON o.user_id = u.id_usuario
+                    JOIN estados e ON o.estado = e.id_estado
+                    ORDER BY o.created_at DESC
                 """)
                 orders = [{"id": row[0], "fecha": row[1], "cliente": row[2], "descripcion": row[3], "estado": row[4], "id_estado": row[5]} for row in cur.fetchall()]
             finally:
