@@ -33,7 +33,7 @@
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('usuarios')">Gestión de Usuarios <i class="fa fa-user-edit"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('busqueda')">Búsqueda <i class="fa fa-search"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('catalogo')">Gestión de Catálogo <i class="fa fa-cogs"></i></a></li>
-          <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('informes')">Informes <i class="fa fa-file-alt"></i></a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="mostrarSeccion('informes')">Gestión de Informes <i class="fa fa-file-alt"></i></a></li>
           <li class="nav-item"><a class="nav-link" href="/logout">Cerrar Sesion <i class="fa fa-door-open"></i></a></li>
         </ul>
       </div>
@@ -251,35 +251,27 @@
 
     <!-- Informes -->
     <section id="informes" class="p-3 rounded mb-3 d-none">
-      <h2>Informes de Pedidos y Ventas</h2>
-      <p>Aquí el administrador puede ver un resumen de pedidos realizados y ventas totales.</p>
+      <h2>Informes de Pedidos</h2>
+      <p>Aquí el administrador puede ver un resumen de pedidos realizados.</p>
       <table class="table table-hover text-center align-middle">
         <thead>
           <tr>
             <th>Fecha</th>
             <th>Cliente</th>
-            <th>Prenda</th>
-            <th>Total</th>
+            <th>Descripción</th>
             <th>Estado</th>
           </tr>
         </thead>
         <tbody>
+          <!-- loop orders -->
           <tr>
-            <td>05/09/2025</td>
-            <td>Juan Pérez</td>
-            <td>Camiseta personalizada</td>
-            <td>$80.000</td>
-            <td>Entregado</td>
+            <td>{item.fecha}</td>
+            <td>{item.cliente}</td>
+            <td>{item.descripcion}</td>
+            <td>{item.estado}</td>
           </tr>
-          <tr>
-            <td>06/09/2025</td>
-            <td>María Gómez</td>
-            <td>Chaqueta</td>
-            <td>$150.000</td>
-            <td>En proceso</td>
-          </tr>
+          <!-- endloop -->
         </tbody>
-      </table>
       <div id="roles-error" class="alert alert-danger d-none" role="alert">
   No se pudieron cargar los roles. Por favor, recarga la página o inicia sesión nuevamente como administrador.
 </div>

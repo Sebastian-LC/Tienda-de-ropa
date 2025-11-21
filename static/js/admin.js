@@ -10,6 +10,7 @@ let reauthAction = null;
 let reauthUserId = null;
 let reauthRoleId = null;
 let reauthTarget = null;
+let reauthEstadoId = null;
 
 // Función para mostrar modal de edición
 function showEditUserModal(userId, username, email) {
@@ -36,10 +37,11 @@ function showCreateUserModal() {
 }
 
 // Función para mostrar modal de reautenticación
-function showReauthModal(action, userId, roleId, target) {
+function showReauthModal(action, userId, roleId, target, estadoId) {
   reauthAction = action;
   reauthUserId = userId;
   reauthRoleId = roleId || null;
+  reauthEstadoId = estadoId || null;
   reauthTarget = target || null;
   document.getElementById('reauthPassword').value = '';
   document.getElementById('reauthError').style.display = 'none';
@@ -408,6 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
       reauthAction = null;
       reauthUserId = null;
       reauthRoleId = null;
+      reauthEstadoId = null;
       reauthTarget = null;
     });
   }

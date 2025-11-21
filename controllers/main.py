@@ -166,10 +166,19 @@ class Handler(BaseHTTPRequestHandler):
                 # Colores
                 cur.execute("SELECT id as id, name as nombre, hex_code as codigo_hex FROM colors")
                 colores = [{"id": r[0], "nombre": r[1], "codigo_hex": r[2]} for r in cur.fetchall()]
+                # Órdenes para informes
+                cur.execute("""
+                    SELECT p.id_producto, p.created_at, u.nombre1 || ' ' || u.apellido1 as cliente, p.descripcion, e.descripcion as estado, p.id_estado
+                    FROM producto p
+                    JOIN usuario u ON p.id_cliente = u.id_cliente
+                    JOIN estados e ON p.id_estado = e.id_estado
+                    ORDER BY p.created_at DESC
+                """)
+                orders = [{"id": row[0], "fecha": row[1], "cliente": row[2], "descripcion": row[3], "estado": row[4], "id_estado": row[5]} for row in cur.fetchall()]
             finally:
                 db.close()
 
-            self.respond(200, render_template(template_name, user=user, products=products, prendas=prendas, telas=telas, estilos=estilos, moldes=moldes, estados=estados, colores=colores))
+            self.respond(200, render_template(template_name, user=user, products=products, prendas=prendas, telas=telas, estilos=estilos, moldes=moldes, estados=estados, colores=colores, orders=orders))
         
         elif self.path == "/admin/users":
             session_id = self.get_session()
@@ -316,6 +325,60 @@ class Handler(BaseHTTPRequestHandler):
                 db.close()
             self.respond(200, json.dumps(roles_list), content_type="application/json")
             return
+        elif self.path == "/admin/estados":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "administrator" not in session_data.get("roles", []):
+                self.respond(403, "No autorizado")
+                return
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                cur.execute("SELECT id_estado, descripcion FROM estados")
+                estados = cur.fetchall()
+                estados_list = [{"id": r[0], "descripcion": r[1]} for r in estados]
+            finally:
+                db.close()
+            self.respond(200, json.dumps(estados_list), content_type="application/json")
+            return
+        elif self.path == "/admin/orders":
+            session_id = self.get_session()
+            ok, session_data = auth.require_session(session_id)
+            if not ok or "administrator" not in session_data.get("roles", []):
+                self.redirect("/")
+                return
+            db = sqlite3.connect(settings.DB_PATH)
+            try:
+                cur = db.cursor()
+                cur.execute("""
+                    SELECT p.id_producto, p.created_at, u.nombre1 || ' ' || u.apellido1 as cliente, p.descripcion, e.descripcion as estado, p.id_estado
+                    FROM producto p
+                    JOIN usuario u ON p.id_cliente = u.id_cliente
+                    JOIN estados e ON p.id_estado = e.id_estado
+                    ORDER BY p.created_at DESC
+                """)
+                orders = [{"id": row[0], "fecha": row[1], "cliente": row[2], "descripcion": row[3], "estado": row[4], "id_estado": row[5]} for row in cur.fetchall()]
+            finally:
+                db.close()
+            # Render the tbody
+            with open(os.path.join(TEMPLATES_DIR, "dashboard_admin.html"), "r", encoding="utf-8") as f:
+                content = f.read()
+            import re
+            m = re.search(r"<!-- loop orders -->(.*?)<!-- endloop -->", content, re.DOTALL)
+            if m:
+                loop_template = m.group(1)
+                rendered = ""
+                if not orders:
+                    rendered = "<tr><td colspan='4' class='text-center'>No hay pedidos disponibles.</td></tr>"
+                else:
+                    for item in orders:
+                        item_html = loop_template
+                        for key, value in item.items():
+                            item_html = item_html.replace(f"{{item.{key}}}", str(value))
+                        rendered += item_html
+                self.respond(200, rendered)
+                return
+            self.respond(200, "No template found")
 
         elif self.path == "/logout":
             session = self.get_session()
@@ -913,12 +976,12 @@ class Handler(BaseHTTPRequestHandler):
                     cur.execute("""
                         SELECT id_producto FROM producto
                         WHERE id_cliente = ?
-                          AND COALESCE(id_prenda, -1) = COALESCE(?, -1)
-                          AND COALESCE(id_estilo, -1) = COALESCE(?, -1)
-                          AND COALESCE(id_tela, -1) = COALESCE(?, -1)
-                          AND COALESCE(CAST(id_talla AS TEXT), '') = COALESCE(?, '')
-                          AND descripcion = ?
-                          AND created_at >= datetime('now', '-10 seconds')
+                            AND COALESCE(id_prenda, -1) = COALESCE(?, -1)
+                            AND COALESCE(id_estilo, -1) = COALESCE(?, -1)
+                            AND COALESCE(id_tela, -1) = COALESCE(?, -1)
+                            AND COALESCE(CAST(id_talla AS TEXT), '') = COALESCE(?, '')
+                            AND descripcion = ?
+                            AND created_at >= datetime('now', '-10 seconds')
                         LIMIT 1
                     """, (id_cliente, tid, seid, tid_tela, tt or '', description))
                     dup = cur.fetchone()
