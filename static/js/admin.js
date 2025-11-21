@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableBody = document.getElementById(`${type}-table-body`);
     if (!tableBody) return;
 
-    const colspan = type === 'color' || type === 'tela' || type === 'estilo' || type === 'molde' ? 5 : 4;
+    const colspan = type === 'color' || type === 'estilo' || type === 'molde' ? 5 : 4;
     tableBody.innerHTML = `<tr><td colspan="${colspan}" class="text-center"><div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando...</td></tr>`;
 
     fetch(`/api/catalog/${type}`)
@@ -550,7 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let cols = `<td>${item.id}</td><td>${item.nombre}</td>`;
             let desc = item.descripcion || '';
             if (type === 'tela') {
-              cols += `<td>${item.material || ''}</td><td>${desc}</td>`;  // Material, Descripción
+              cols += `<td>${desc}</td>`;  // Descripción
             } else if (type === 'color') {
               cols += `<td><div style="width: 20px; height: 20px; background-color: ${item.codigo_hex}; border: 1px solid #000;"></div> ${item.codigo_hex}</td><td>${desc}</td>`;  // Código Hex, Descripción
             } else if (type === 'prenda') {
@@ -561,7 +561,7 @@ document.addEventListener('DOMContentLoaded', () => {
               cols += `<td>${item.talla || ''}</td><td>${desc}</td>`;  // Talla, Descripción
             }
             cols += `<td>
-              <button class="btn btn-sm btn-warning" onclick="editCatalogItem('${type}', ${item.id}, '${item.nombre}', '${desc}', '${item.codigo_hex || ''}', '${item.material || ''}', '${item.id_tipo_prenda || ''}', '${item.talla || ''}')">Editar</button>
+              <button class="btn btn-sm btn-warning edit-catalog-btn" data-type="${type}" data-id="${item.id}" data-nombre="${item.nombre.replace(/"/g, '"')}" data-descripcion="${desc.replace(/"/g, '"')}" data-hex="${item.codigo_hex || ''}" data-prenda="${item.id_tipo_prenda || ''}" data-talla="${item.talla || ''}">Editar</button>
               <button class="btn btn-sm btn-danger" onclick="deleteCatalogItem('${type}', ${item.id})">Eliminar</button>
             </td>`;
             row.innerHTML = cols;
@@ -627,27 +627,39 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.show();
   };
 
-  // Función para editar elemento
-  window.editCatalogItem = function(type, id, nombre, descripcion, hex, material, prenda, talla) {
-    document.getElementById('catalogType').value = type;
-    document.getElementById('catalogId').value = id;
-    document.getElementById('catalogNombre').value = nombre;
-    document.getElementById('catalogDescripcion').value = descripcion || '';
-    document.getElementById('catalogHex').value = hex || '#000000';
-    document.getElementById('catalogTalla').value = talla || '';
-    document.getElementById('catalogMaterial').value = material || '';
-    document.getElementById('catalogPrenda').value = prenda || '';
-    document.getElementById('catalogModalLabel').textContent = `Editar ${type.charAt(0).toUpperCase() + type.slice(1)}`;
-    // Mostrar/ocultar campos según el tipo
-    document.getElementById('catalogDescDiv').style.display = (type === 'color') ? 'none' : 'block';
-    document.getElementById('catalogHexDiv').style.display = (type === 'color') ? 'block' : 'none';
-    document.getElementById('catalogTallaDiv').style.display = (type === 'molde') ? 'block' : 'none';
-    document.getElementById('catalogMaterialDiv').style.display = 'none';
-    document.getElementById('catalogPrendaDiv').style.display = (type === 'estilo') ? 'block' : 'none';
-    document.getElementById('catalogError').style.display = 'none';
-    const modal = new bootstrap.Modal(document.getElementById('catalogModal'));
-    modal.show();
-  };
+  // Event listener para botones de editar catálogo
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('edit-catalog-btn')) {
+      const type = e.target.getAttribute('data-type');
+      const id = e.target.getAttribute('data-id');
+      const nombre = e.target.getAttribute('data-nombre');
+      const descripcion = e.target.getAttribute('data-descripcion');
+      const hex = e.target.getAttribute('data-hex');
+      const prenda = e.target.getAttribute('data-prenda');
+      const talla = e.target.getAttribute('data-talla');
+
+      document.getElementById('catalogType').value = type;
+      document.getElementById('catalogId').value = id;
+      document.getElementById('catalogNombre').value = nombre;
+      document.getElementById('catalogDescripcion').value = descripcion || '';
+      document.getElementById('catalogHex').value = hex || '#000000';
+      document.getElementById('catalogTalla').value = talla || '';
+      document.getElementById('catalogPrenda').value = prenda || '';
+      document.getElementById('catalogModalLabel').textContent = `Editar ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+      // Mostrar/ocultar campos según el tipo
+      document.getElementById('catalogDescDiv').style.display = (type === 'color') ? 'none' : 'block';
+      document.getElementById('catalogHexDiv').style.display = (type === 'color') ? 'block' : 'none';
+      document.getElementById('catalogTallaDiv').style.display = (type === 'molde') ? 'block' : 'none';
+      document.getElementById('catalogMaterialDiv').style.display = 'none';
+      document.getElementById('catalogPrendaDiv').style.display = (type === 'estilo') ? 'block' : 'none';
+      if (type === 'estilo') {
+        loadPrendasForSelect();
+      }
+      document.getElementById('catalogError').style.display = 'none';
+      const modal = new bootstrap.Modal(document.getElementById('catalogModal'));
+      modal.show();
+    }
+  });
 
   // Función para eliminar elemento
   window.deleteCatalogItem = function(type, id) {
