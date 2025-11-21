@@ -1180,6 +1180,9 @@ class Handler(BaseHTTPRequestHandler):
                         if not nombre or not hex_code:
                             self.respond(400, json.dumps({"ok": False, "msg": "Nombre y codigo_hex requeridos"}), content_type="application/json")
                             return
+                        if len(nombre) > 20:
+                            self.respond(400, json.dumps({"ok": False, "msg": "El nombre no puede exceder 20 caracteres"}), content_type="application/json")
+                            return
                         cur.execute("UPDATE colors SET name = ?, hex_code = ? WHERE id = ?", (nombre, hex_code, int(id_)))
                     elif type_ == 'tela':
                         nombre = data.get("nombre")

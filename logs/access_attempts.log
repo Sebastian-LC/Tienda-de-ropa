@@ -714,3 +714,9 @@
 2025-11-21T18:56:15 | LOGIN duration: 0.33 seconds for user 1
 2025-11-21T18:56:20.172432 | ip:127.0.0.1 | user:1 | success:1
 2025-11-21T18:56:20 | LOGIN duration: 0.30 seconds for user 1
+2025-11-21T19:01:16.461047 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T19:01:16 | LOGIN duration: 0.38 seconds for user 1
+2025-11-21T19:05:39.047490 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T19:05:39 | LOGIN duration: 0.73 seconds for user 1
+2025-11-21T19:11:52.053554 | ip:127.0.0.1 | user:1 | success:1
+2025-11-21T19:11:52 | LOGIN duration: 0.82 seconds for user 1
