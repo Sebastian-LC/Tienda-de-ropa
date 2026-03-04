@@ -1,5 +1,10 @@
+/* ===== IMPORTACIÓN DE FUENTE ===== */
+/* Importa la fuente Montserrat desde Google Fonts para usar en todo el documento */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
+/* ===== RESET GENERAL ===== */
+/* Resetea márgenes, padding y establece box-sizing para todos los elementos */
+/* También establece la fuente por defecto */
 *{
     margin: 0;
     padding: 0;
@@ -7,9 +12,11 @@
     font-family: 'Montserrat', sans-serif;
 }
 
+/* ===== ESTILO DEL BODY ===== */
+/* Establece el fondo con imagen, centra el contenido vertical y horizontalmente */
+/* Altura completa de la ventana */
 body{
-    background-color: #c9d6ff;
-    background: linear-gradient(to right, #e2e2e2, #c9d6ff);
+    background-image: url('../logo/fondoAdmin.jpg');
     display: flex;
     align-items: center;
     justify-content: center;
@@ -17,6 +24,9 @@ body{
     height: 100vh;
 }
 
+/* ===== CONTENEDOR PRINCIPAL ===== */
+/* Estilo para el contenedor principal del formulario de login/signup */
+/* Fondo blanco, bordes redondeados, sombra, posición relativa para elementos absolutos */
 .container{
     background-color: #fff;
     border-radius: 30px;
@@ -28,6 +38,8 @@ body{
     min-height: 480px;
 }
 
+/* ===== TEXTO DENTRO DEL CONTENEDOR ===== */
+/* Estilo para párrafos dentro del contenedor */
 .container p{
     font-size: 14px;
     line-height: 20px;
@@ -35,10 +47,13 @@ body{
     margin: 20px 0;
 }
 
+/* Estilo para spans dentro del contenedor */
 .container span{
     font-size: 12px;
 }
 
+/* ===== ENLACES DENTRO DEL CONTENEDOR ===== */
+/* Estilo para enlaces dentro del contenedor */
 .container a{
     color: #333;
     font-size: 13px;
@@ -46,8 +61,10 @@ body{
     margin: 15px 0 10px;
 }
 
+/* ===== BOTONES DENTRO DEL CONTENEDOR ===== */
+/* Estilo para botones dentro del contenedor */
 .container button{
-    background-color: #512da8;
+    background-color: #a82d2d;
     color: #fff;
     font-size: 12px;
     padding: 10px 45px;
@@ -60,11 +77,15 @@ body{
     cursor: pointer;
 }
 
+/* Variante oculta para botones */
 .container button.hidden{
     background-color: transparent;
     border-color: #fff;
 }
 
+/* ===== FORMULARIOS DENTRO DEL CONTENEDOR ===== */
+/* Estilo para formularios dentro del contenedor */
+/* Flexbox para centrar vertical y horizontalmente */
 .container form{
     background-color: #fff;
     display: flex;
@@ -75,6 +96,8 @@ body{
     height: 100%;
 }
 
+/* ===== CAMPOS DE ENTRADA ===== */
+/* Estilo para inputs dentro del contenedor */
 .container input{
     background-color: #eee;
     border: none;
@@ -86,6 +109,40 @@ body{
     outline: none;
 }
 
+/* ===== CONTENEDOR DE CONTRASEÑA ===== */
+/* Contenedor relativo para campos de contraseña con botón toggle */
+.password-container {
+    position: relative;
+    width: 100%;
+}
+
+/* Ajuste de padding derecho para inputs en contenedor de contraseña */
+.password-container input {
+    padding-right: 40px;
+}
+
+/* Estilo para el botón toggle de mostrar/ocultar contraseña */
+.password-container .toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-95%) translateX(10%);
+    background: transparent;
+    border: none;
+    color: #a82d2d;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== CONTENEDOR DE FORMULARIO ===== */
+/* Contenedor para los formularios de sign-in y sign-up */
+/* Posición absoluta para animaciones */
 .form-container{
     position: absolute;
     top: 0;
@@ -93,16 +150,21 @@ body{
     transition: all 0.6s ease-in-out;
 }
 
+/* ===== SECCIÓN DE INICIO DE SESIÓN ===== */
+/* Posición inicial del formulario de sign-in */
 .sign-in{
     left: 0;
     width: 50%;
     z-index: 2;
 }
 
+/* Animación cuando el contenedor está activo (cambia a sign-up) */
 .container.active .sign-in{
     transform: translateX(100%);
 }
 
+/* ===== SECCIÓN DE REGISTRO ===== */
+/* Posición inicial del formulario de sign-up (oculto) */
 .sign-up{
     left: 0;
     width: 50%;
@@ -110,6 +172,7 @@ body{
     z-index: 1;
 }
 
+/* Animación cuando el contenedor está activo (muestra sign-up) */
 .container.active .sign-up{
     transform: translateX(100%);
     opacity: 1;
@@ -117,6 +180,8 @@ body{
     animation: move 0.6s;
 }
 
+/* ===== ANIMACIÓN DE MOVIMIENTO ===== */
+/* Keyframes para la animación de aparición del sign-up */
 @keyframes move{
     0%, 49.99%{
         opacity: 0;
@@ -128,10 +193,13 @@ body{
     }
 }
 
+/* ===== ICONOS SOCIALES ===== */
+/* Estilo para iconos de redes sociales */
 .social-icons{
     margin: 20px 0;
 }
 
+/* Estilo para enlaces de iconos sociales */
 .social-icons a{
     border: 1px solid #ccc;
     border-radius: 20%;
@@ -143,6 +211,8 @@ body{
     height: 40px;
 }
 
+/* ===== CONTENEDOR DE TOGGLE ===== */
+/* Contenedor para el panel de toggle entre sign-in y sign-up */
 .toggle-container{
     position: absolute;
     top: 0;
@@ -155,15 +225,18 @@ body{
     z-index: 1000;
 }
 
+/* Animación del toggle-container cuando activo */
 .container.active .toggle-container{
     transform: translateX(-100%);
     border-radius: 0 150px 100px 0;
 }
 
+/* ===== PANEL DE TOGGLE ===== */
+/* Estilo para el panel de toggle */
 .toggle{
-    background-color: #512da8;
+    background-color: #2b0000;
     height: 100%;
-    background: linear-gradient(to right, #5c6bc0, #512da8);
+    background: #2b0000;
     color: #fff;
     position: relative;
     left: -100%;
@@ -173,10 +246,13 @@ body{
     transition: all 0.6s ease-in-out;
 }
 
+/* Animación del toggle cuando activo */
 .container.active .toggle{
     transform: translateX(50%);
 }
 
+/* ===== PANEL DE CONTENIDO DEL TOGGLE ===== */
+/* Contenedor para el contenido del panel de toggle */
 .toggle-panel{
     position: absolute;
     width: 50%;
@@ -192,19 +268,25 @@ body{
     transition: all 0.6s ease-in-out;
 }
 
+/* ===== PANEL IZQUIERDO DEL TOGGLE ===== */
+/* Posición inicial del panel izquierdo */
 .toggle-left{
     transform: translateX(-200%);
 }
 
+/* Animación cuando activo */
 .container.active .toggle-left{
     transform: translateX(0);
 }
 
+/* ===== PANEL DERECHO DEL TOGGLE ===== */
+/* Posición inicial del panel derecho */
 .toggle-right{
     right: 0;
     transform: translateX(0);
 }
 
+/* Animación cuando activo */
 .container.active .toggle-right{
     transform: translateX(200%);
 }

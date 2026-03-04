@@ -16,6 +16,9 @@ def hash_password(password, salt, iterations=100_000):
 
 def verify_password(password, salt_hex, stored_hash):
     """Verifica si la contraseña y salt generan el hash esperado."""
+    if ":" in stored_hash:
+        # Nuevo formato: salt:hash
+        salt_hex, stored_hash = stored_hash.split(":", 1)
     return hash_password(password, salt_hex) == stored_hash
 
 def gen_2fa_code():
@@ -29,6 +32,7 @@ from config import settings
 
 def send_email(to_email, subject, message, html=False):
     """Envía un correo electrónico usando SMTP y los datos de settings."""
+    print(f"DEBUG: Intentando enviar email a {to_email} con subject '{subject}'")
     try:
         msg = MIMEMultipart("alternative")
         msg["From"] = settings.SMTP_USER
@@ -40,14 +44,20 @@ def send_email(to_email, subject, message, html=False):
         else:
             msg.attach(MIMEText(message, "plain", "utf-8"))
 
+        print(f"DEBUG: Conectando a SMTP {settings.SMTP_SERVER}:{settings.SMTP_PORT}")
         with smtplib.SMTP(settings.SMTP_SERVER, settings.SMTP_PORT) as server:
             server.starttls()
+            print(f"DEBUG: Logueando con user {settings.SMTP_USER}")
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            print("DEBUG: Enviando mensaje")
             server.send_message(msg)
+            print("DEBUG: Email enviado exitosamente")
 
         return True
     except Exception as e:
-        print("Failed to send email:", e)
+        print(f"DEBUG: Failed to send email: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
@@ -57,7 +67,7 @@ def build_2fa_email(username: str, code: str) -> str:
     return f"""
     <html>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
-        <table style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 10px; 
+        <table style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 10px;
                     box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 20px;">
         <tr>
             <td style="text-align: center;">
@@ -66,15 +76,49 @@ def build_2fa_email(username: str, code: str) -> str:
             <p style="font-size: 15px; color: #333;">
                 Tu código de verificación en dos pasos es:
             </p>
-            <div style="font-size: 28px; font-weight: bold; 
-                        background: #8c734a; color: white; 
-                        padding: 12px 20px; border-radius: 8px; 
+            <div style="font-size: 28px; font-weight: bold;
+                        background: #8c734a; color: white;
+                        padding: 12px 20px; border-radius: 8px;
                         display: inline-block; letter-spacing: 3px;">
                 {code}
             </div>
             <p style="margin-top: 20px; font-size: 13px; color: #666;">
                 Este código expirará en 5 minutos.<br/>
                 Si no solicitaste este inicio de sesión, por favor ignora este mensaje.
+            </p>
+            </td>
+        </tr>
+        </table>
+    </body>
+    </html>
+    """
+
+def build_reset_email(token: str) -> str:
+    """Construye el HTML del correo para recuperación de contraseña."""
+    reset_url = f"http://localhost:8080/reset-password?token={token}"
+    return f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+        <table style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 10px;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1); padding: 20px;">
+        <tr>
+            <td style="text-align: center;">
+            <h2 style="color: #8c734a;">JAANSTYLE</h2>
+            <p style="font-size: 16px; color: #333;">Recuperación de contraseña</p>
+            <p style="font-size: 15px; color: #333;">
+                Has solicitado restablecer tu contraseña. Haz clic en el botón de abajo para continuar:
+            </p>
+            <a href="{reset_url}" style="background: #8c734a; color: white; padding: 12px 20px;
+               text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+               Restablecer contraseña
+            </a>
+            <p style="margin-top: 20px; font-size: 13px; color: #666;">
+                Este enlace expirará en 30 minutos.<br/>
+                Si no solicitaste este cambio, por favor ignora este mensaje.
+            </p>
+            <p style="font-size: 12px; color: #999;">
+                Si el botón no funciona, copia y pega esta URL en tu navegador:<br/>
+                {reset_url}
             </p>
             </td>
         </tr>
